@@ -321,9 +321,14 @@ function turni(){
   if(legacyEight(T))return `<div class="card"><h2>Calendario da aggiornare</h2><p>Questo torneo usa il precedente calendario fisso: non prevede il passaggio dei vincitori nel gruppo A e degli sconfitti nel gruppo B.</p><p>Per utilizzare le nuove regole occorre iniziare un nuovo torneo. La Classifica Generale non verrà cancellata.</p><button class="p" onclick="resetTournament()">Azzera il vecchio torneo</button></div>`;
   const current=T.rounds[n-1],ready=roundReady(current);
   const nextBtn=T.mode===8 && n<6?`<div class="row"><button class="p" ${ready?'':'disabled'} onclick="nextRound()">Genera turno ${n+1}</button></div><p class="mut">I vincitori diventano gruppo A e gli sconfitti gruppo B. In caso di pareggio, i gruppi vengono assegnati casualmente. Il nuovo turno si genera dopo tutti i risultati.</p>`:'';
-  return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>${nextBtn}`+
-  T.rounds.map((r,i)=>`<h2>Turno ${i+1}</h2>${T.mode===8?`<p class="mut">Gruppo A: ${r.A.map(id=>esc(T.names[id])).join(', ')} · Gruppo B: ${Object.keys(T.names).filter(id=>!r.A.includes(id)).map(id=>esc(T.names[id])).join(', ')}</p>`:''}${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+
-  r.matches.map((m,k)=>{
+  // Visualizza sempre prima il turno corrente, mantenendo invariati gli indici originali
+  // delle partite per il salvataggio dei risultati su Supabase.
+  const order=[n-1,...Array.from({length:n-1},(_,j)=>n-2-j)];
+  return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>`+
+  order.map(i=>{
+    const r=T.rounds[i];
+    return `${i===n-1?`<h2>Turno ${i+1} · ${roundReady(r)?'Completato':'In corso'}</h2>${nextBtn}`:`${i===n-2?'<h2 class="mut">Turni precedenti</h2>':''}<h3 class="mut">Turno ${i+1} · Concluso</h3>`}`+`${T.mode===8?`<p class="mut">Gruppo A: ${r.A.map(id=>esc(T.names[id])).join(', ')} · Gruppo B: ${Object.keys(T.names).filter(id=>!r.A.includes(id)).map(id=>esc(T.names[id])).join(', ')}</p>`:''}${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+
+    r.matches.map((m,k)=>{
     const locked=T.mode===8 && (i<n-1 || T.applied);
     const isDraw=done(m)&&+m.s1===+m.s2;
     const tieNotice=T.mode===8 && isDraw && (m.advance===1||m.advance===2)
@@ -331,7 +336,8 @@ function turni(){
       : T.mode===8 && isDraw && n<6
       ? `<p class="mut">I gruppi A e B saranno assegnati casualmente alla generazione del prossimo turno.</p>` : '';
     return `<div class="card"><div class="mut">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" ${locked?'disabled':''} aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" ${locked?'disabled':''} aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${isDraw?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}${tieNotice}</div>`;
-  }).join('')).join('');
+    }).join('');
+  }).join('');
 }
 const split=()=>{const C=cfg(),ids=S.players.filter(p=>S.sel[p.id]).sort((a,b)=>med(b)-med(a)).map(p=>p.id);return{A:ids.slice(0,C.group),B:ids.slice(C.group,C.players)}};
 function gruppi(){
