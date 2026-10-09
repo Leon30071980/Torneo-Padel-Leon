@@ -9,9 +9,9 @@
 </main><footer>Torneo Padel Leon · Dati condivisi tramite Supabase</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
 'use strict';
-const URL='https://aelwovphlzesshsvflst.supabase.co';
+const SUPABASE_URL='https://aelwovphlzesshsvflst.supabase.co';
 const KEY='sb_publishable_OwMYzJuBbxb0-WX8ub25_g_TKyaU5Sq';
-const sb=window.supabase.createClient(URL,KEY);
+const sb=window.supabase.createClient(SUPABASE_URL,KEY);
 const $=id=>document.getElementById(id);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let role=null,session=null,tab='torneo',pending=false;
