@@ -1,51 +1,337 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101a31"><title>Torneo Padel Leon</title><style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#e9eefc;background:#0c1426}*{box-sizing:border-box}body{margin:0}header{padding:24px 18px;background:linear-gradient(130deg,#16294b,#12243b);border-bottom:1px solid #345070}main{max-width:1050px;margin:auto;padding:18px}h1{margin:0;font-size:clamp(24px,4vw,38px)}h2{font-size:20px}p,small{color:#afbed4}button,input,select{font:inherit}button{background:#2677ec;border:0;border-radius:10px;color:white;padding:10px 15px;cursor:pointer}button.secondary{background:#283b58}button.danger{background:#9e3a49}button:disabled{opacity:.45;cursor:not-allowed}input,select{background:#0e1a30;border:1px solid #3a5275;color:white;border-radius:8px;padding:10px;max-width:100%}input[type=number]{width:75px}.card{background:#16243b;border:1px solid #314462;border-radius:14px;padding:17px;margin:14px 0}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.tabs button.active{background:#398cba}.muted{color:#aebed5}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.match{background:#101c31;padding:12px;border:1px solid #354969;border-radius:10px}.match strong{display:block;margin-bottom:9px}.score{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}.score span{flex:1}.score input{text-align:center}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:9px 6px;text-align:left;border-bottom:1px solid #31415b}th{color:#aabbd1} .scroll{overflow:auto}.notice{padding:10px 12px;background:#233a56;border-radius:9px;margin:10px 0}.error{background:#673342}.success{background:#235343}label{display:block;color:#b6c8e3;margin-bottom:6px}.hidden{display:none}footer{text-align:center;color:#8da3c4;padding:24px}.pill{font-size:12px;padding:4px 8px;background:#314864;border-radius:20px}.playerline{display:flex;gap:8px;align-items:center;margin:7px 0}.playerline input{flex:1;min-width:0}.wide{width:100%}@media(max-width:500px){main{padding:10px}.card{padding:12px}.score input{width:60px}td,th{padding:7px 4px;font-size:12px}}</style></head><body>
-<header><div style="max-width:1050px;margin:auto"><h1>🎾 Torneo Padel Leon</h1><p>Calendario · risultati · classifica in tempo reale</p><div class="row between"><span id="connection" class="pill">Connessione…</span><span id="identity" class="muted">Visitatore</span></div></div></header>
-<main><div id="alert"></div><div class="tabs"><button data-tab="torneo" class="active">Torneo</button><button data-tab="classifica">Classifica</button><button data-tab="giocatori">Giocatori</button><button data-tab="login">Accesso</button></div>
-<section id="tab-login" class="hidden"><div class="card"><h2>Accesso</h2><div id="loginForm"><div class="grid"><div><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="email"></div><div><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Password"></div></div><div class="row" style="margin-top:14px"><button id="loginBtn">Accedi</button></div></div><div id="logoutForm" class="hidden"><p id="loggedUser"></p><button id="logoutBtn" class="secondary">Esci</button></div></div></section>
-<section id="tab-giocatori" class="hidden"><div class="card"><h2>Elenco giocatori</h2><p>Inserisca i nomi che verranno utilizzati per i tornei. Solo l'amministratore può modificare l'elenco.</p><div id="playerEditor"></div><div class="row" style="margin-top:12px"><button id="addPlayer">+ Aggiungi giocatore</button><button id="savePlayers">Salva elenco</button></div></div></section>
-<section id="tab-torneo"><div class="card"><div class="row between"><h2>Impostazione torneo</h2><span id="tourneyStatus" class="pill"></span></div><div class="grid"><div><label>Modalità</label><select id="mode" class="wide"><option value="4">4 giocatori · 1 campo · 6 partite</option><option value="6">6 giocatori · 1 campo · 9 partite</option><option value="8">8 giocatori · 2 campi · 12 partite</option></select></div><div><label>Nome del torneo</label><input id="tournamentName" class="wide" placeholder="Torneo Padel Leon"></div></div><div id="selection" class="grid" style="margin-top:14px"></div><div class="row" style="margin-top:14px"><button id="generate">Genera calendario</button><button id="reset" class="secondary">Nuovo torneo</button></div><p id="modeDescription"></p></div><div id="schedule"></div></section>
-<section id="tab-classifica" class="hidden"><div class="card"><h2>Classifica del torneo</h2><p>Vittoria 3 punti · Pareggio 1 punto · Sconfitta 0 punti. A parità di punti: differenza punti, poi punti fatti.</p><div id="ranking" class="scroll"></div></div></section>
-</main><footer>Torneo Padel Leon · Dati condivisi tramite Supabase</footer>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
-'use strict';
-const SUPABASE_URL='https://aelwovphlzesshsvflst.supabase.co';
-const KEY='sb_publishable_OwMYzJuBbxb0-WX8ub25_g_TKyaU5Sq';
-const sb=window.supabase.createClient(SUPABASE_URL,KEY);
-const $=id=>document.getElementById(id);
-const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let role=null,session=null,tab='torneo',pending=false;
-let state={players:[],sel:{},T:null,mode:4};
-function alertMsg(s,error=false){$('alert').innerHTML='<div class="notice '+(error?'error':'success')+'">'+escapeHtml(s)+'</div>';setTimeout(()=>$('alert').innerHTML='',6500)}
-function normalize(v){return {players:Array.isArray(v?.players)?v.players:[],sel:v?.sel&&typeof v.sel==='object'?v.sel:{},T:v?.T||null,mode:Number(v?.mode)||4}}
-function editable(){return role==='ADMIN'||role==='USER'}
-function admin(){return role==='ADMIN'}
-function currentPlayers(){return (state.players||[]).map((p,i)=>({id:String(p.id??i),name:String(p.name??p.nome??p.cognome??p)})).filter(p=>p.name.trim())}
-function name(id){return currentPlayers().find(p=>p.id===String(id))?.name||String(id)}
-function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function pairs4(ids){const [a,b,c,d]=ids;return [[a,b,c,d],[a,c,b,d],[a,d,b,c],[a,b,c,d],[a,c,b,d],[a,d,b,c]].map((x,i)=>({round:i+1,court:1,teams:[[x[0],x[1]],[x[2],x[3]]],scores:[null,null]}))}
-// Nine matches, six appearances each. Randomized local optimization balances partners and opponents.
-function schedule6(ids){let best=null,bestCost=Infinity;const all=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)for(let c=b+1;c<6;c++)for(let d=c+1;d<6;d++){const v=[ids[a],ids[b],ids[c],ids[d]];all.push(...[[[v[0],v[1]],[v[2],v[3]]],[[v[0],v[2]],[v[1],v[3]]],[[v[0],v[3]],[v[1],v[2]]]])}for(let trial=0;trial<120;trial++){let counts=Object.fromEntries(ids.map(x=>[x,0])),partner={},opponent={},games=[];for(let r=0;r<9;r++){let cand=null,min=Infinity;for(const teams of shuffle(all)){const flat=teams.flat();if(flat.some(x=>counts[x]>=6))continue;let score=0;for(const x of flat){score+=Math.pow(counts[x]+1,2)*7; if(counts[x]<r*2/3)score-=2}for(const t of teams)score+=(partner[[...t].sort().join('|')]||0)*26;for(const x of teams[0])for(const y of teams[1])score+=(opponent[[x,y].sort().join('|')]||0)*3;score+=Math.random()*10;if(score<min){min=score;cand=teams}}if(!cand)break;games.push(cand);for(const x of cand.flat())counts[x]++;for(const t of cand){const k=[...t].sort().join('|');partner[k]=(partner[k]||0)+1}for(const x of cand[0])for(const y of cand[1]){const k=[x,y].sort().join('|');opponent[k]=(opponent[k]||0)+1}}if(games.length!==9||ids.some(x=>counts[x]!==6))continue;let cost=Object.values(partner).reduce((s,x)=>s+(x-1)**2*20,0)+Object.values(opponent).reduce((s,x)=>s+(x-2)**2,0);if(cost<bestCost){best=games;bestCost=cost}}if(!best)throw Error('Impossibile generare un calendario bilanciato. Riprovi.');return best.map((teams,i)=>({round:i+1,court:1,teams,scores:[null,null]}))}
-// Two concurrent AB vs AB games per round. Each A and B appears once per round.
-function schedule8(A,B){let best=null,bestCost=Infinity;for(let trial=0;trial<600;trial++){let rounds=[],partners={},opps={};for(let r=0;r<6;r++){let cand=null,min=Infinity;for(let attempt=0;attempt<80;attempt++){let aa=shuffle(A),bb=shuffle(B),teams=aa.map((a,i)=>[a,bb[i]]),games=[[teams[0],teams[1]],[teams[2],teams[3]]];let score=0;for(const t of teams)score+=(partners[t.join('|')]||0)*25;for(const g of games){for(const x of g[0])for(const y of g[1])score+=(opps[[x,y].sort().join('|')]||0)*3}score+=Math.random()*3;if(score<min){min=score;cand=games}}rounds.push(cand);for(const g of cand){for(const t of g){const k=t.join('|');partners[k]=(partners[k]||0)+1}for(const x of g[0])for(const y of g[1]){const k=[x,y].sort().join('|');opps[k]=(opps[k]||0)+1}}}let cost=Object.values(partners).reduce((s,x)=>s+(x-1)**2*30,0)+Object.values(opps).reduce((s,x)=>s+(x-2)**2,0);if(cost<bestCost){bestCost=cost;best=rounds}}return best.flatMap((games,r)=>games.map((teams,c)=>({round:r+1,court:c+1,teams,scores:[null,null]})))}
-async function persist(next){if(!editable())return alertMsg('Acceda per modificare il torneo.',true);if(pending)return;pending=true;try{const {data,error}=await sb.rpc('salva_stato_auth',{p_data:next});if(error)throw error;state=normalize(data);render();alertMsg('Salvataggio completato')}catch(e){alertMsg('Errore salvataggio: '+e.message,true)}finally{pending=false}}
-async function load(){const {data,error}=await sb.from('torneo_stato').select('data').eq('id',1).single();if(error){$('connection').textContent='Errore connessione';alertMsg(error.message,true);return}state=normalize(data.data);$('connection').textContent='● Dati condivisi';render()}
-async function authRefresh(){const {data}=await sb.auth.getSession();session=data.session;role=null;if(session){const r=await sb.rpc('get_my_role');if(!r.error)role=r.data} $('identity').textContent=session?(session.user.email+' · '+(role||'SENZA RUOLO')):'Visitatore';$('loginForm').classList.toggle('hidden',!!session);$('logoutForm').classList.toggle('hidden',!session);$('loggedUser').textContent=session?.user.email||'';render()}
-function showTab(t){tab=t;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));['torneo','classifica','giocatori','login'].forEach(x=>$('tab-'+x).classList.toggle('hidden',x!==t));render()}
-function render(){if(!state)return;const m=Number(state.mode)||4;$('mode').value=String(m);$('mode').disabled=!editable();$('tournamentName').value=state.T?.title||'Torneo Padel Leon';$('tournamentName').disabled=!editable();$('generate').disabled=!editable();$('reset').disabled=!editable();$('addPlayer').disabled=!admin();$('savePlayers').disabled=!admin();$('tourneyStatus').textContent=state.T?.matches?.length?'Calendario generato':'Da organizzare';$('modeDescription').textContent=m===8?'4 giocatori A e 4 B; ogni coppia è AB, due campi contemporaneamente.':m===6?'9 partite; ogni giocatore disputa 6 partite e riposa 3 volte.':'6 partite; ogni giocatore è compagno degli altri due volte.';renderSelection();renderSchedule();renderRanking();renderPlayers()}
-function renderSelection(){let m=Number(state.mode),groups=m===8?[['A',4],['B',4]]:[['Giocatori',m]],used=new Set();let html='';for(const [g,n] of groups){html+='<div class="card"><strong>Gruppo '+escapeHtml(g)+'</strong>';for(let i=0;i<n;i++){const key=g+'-'+i;let value=state.sel[key]??'';used.add(String(value));html+='<div style="margin-top:9px"><label>'+(i+1)+'</label><select data-slot="'+key+'" '+(!editable()?'disabled':'')+'><option value="">Seleziona giocatore</option>'+currentPlayers().map(p=>'<option value="'+escapeHtml(p.id)+'" '+(String(value)===p.id?'selected':'')+'>'+escapeHtml(p.name)+'</option>').join('')+'</select></div>'}html+='</div>'}$('selection').innerHTML=html;document.querySelectorAll('[data-slot]').forEach(el=>el.addEventListener('change',async()=>{let next=structuredClone(state);next.sel[el.dataset.slot]=el.value;await persist(next)}))}
-function renderSchedule(){let t=state.T,root=$('schedule');if(!t?.matches?.length){root.innerHTML='<div class="card"><p>Il calendario non è ancora stato generato.</p></div>';return}let rounds=[...new Set(t.matches.map(x=>x.round))];root.innerHTML='<div class="card"><h2>'+escapeHtml(t.title||'Torneo')+'</h2><p>Inserisca i punti segnati da ciascuna coppia. I risultati vengono salvati sul database condiviso.</p></div>'+rounds.map(r=>'<div class="card"><h2>Turno '+r+'</h2><div class="grid">'+t.matches.map((g,i)=>g.round!==r?'':'<div class="match"><strong>Campo '+g.court+'</strong><div class="score"><span>'+escapeHtml(g.teams[0].map(name).join(' / '))+'</span><input aria-label="Punti squadra 1" type="number" min="0" step="1" data-match="'+i+'" data-side="0" value="'+(g.scores?.[0]??'')+'" '+(!editable()?'disabled':'')+'></div><div class="score"><span>'+escapeHtml(g.teams[1].map(name).join(' / '))+'</span><input aria-label="Punti squadra 2" type="number" min="0" step="1" data-match="'+i+'" data-side="1" value="'+(g.scores?.[1]??'')+'" '+(!editable()?'disabled':'')+'></div><button class="secondary" data-save-match="'+i+'" '+(!editable()?'disabled':'')+'>Salva risultato</button></div>').join('')+'</div></div>').join('');document.querySelectorAll('[data-save-match]').forEach(b=>b.onclick=async()=>{let i=+b.dataset.saveMatch,els=[...document.querySelectorAll('[data-match="'+i+'"]')],values=els.map(e=>e.value.trim()===''?null:Number(e.value));if(values.some(x=>x!==null&&(!Number.isInteger(x)||x<0)))return alertMsg('Inserisca punteggi interi non negativi.',true);if(values.some(x=>x===null)&&values.some(x=>x!==null))return alertMsg('Inserisca entrambi i punteggi oppure lasci entrambi vuoti.',true);let next=structuredClone(state);next.T.matches[i].scores=values;await persist(next)})}
-function renderRanking(){let ids=state.T?.ids||[],stats=Object.fromEntries(ids.map(id=>[id,{id,pg:0,v:0,n:0,p:0,pf:0,ps:0,pt:0}]));for(const g of state.T?.matches||[]){let [a,b]=g.scores||[];if(a===null||b===null||!Number.isFinite(a)||!Number.isFinite(b))continue;for(let side=0;side<2;side++){let own=side===0?a:b,opp=side===0?b:a;for(const id of g.teams[side]){let x=stats[id];if(!x)continue;x.pg++;x.pf+=own;x.ps+=opp;if(own>opp){x.v++;x.pt+=3}else if(own===opp){x.n++;x.pt++}else x.p++}}}let sorted=Object.values(stats).sort((a,b)=>b.pt-a.pt||(b.pf-b.ps)-(a.pf-a.ps)||b.pf-a.pf||name(a.id).localeCompare(name(b.id)));$('ranking').innerHTML=sorted.length?'<table><thead><tr><th>#</th><th>Giocatore</th><th>PT</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>PF</th><th>PS</th><th>Diff.</th></tr></thead><tbody>'+sorted.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(name(x.id))+'</td><td><b>'+x.pt+'</b></td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pf+'</td><td>'+x.ps+'</td><td>'+(x.pf-x.ps)+'</td></tr>').join('')+'</tbody></table>':'<p>Generi prima il calendario.</p>'}
-function renderPlayers(){let root=$('playerEditor');root.innerHTML=currentPlayers().map((p,i)=>'<div class="playerline"><span>'+(i+1)+'.</span><input data-player="'+escapeHtml(p.id)+'" value="'+escapeHtml(p.name)+'" '+(!admin()?'disabled':'')+'><button class="danger" data-remove="'+escapeHtml(p.id)+'" '+(!admin()?'disabled':'')+'>×</button></div>').join('')||'<p>Nessun giocatore inserito.</p>';root.querySelectorAll('[data-remove]').forEach(b=>b.onclick=async()=>{if(state.T?.matches?.length)return alertMsg('Per rimuovere giocatori, inizi prima un nuovo torneo.',true);let next=structuredClone(state);next.players=currentPlayers().filter(p=>p.id!==b.dataset.remove);await persist(next)})}
-$('mode').onchange=async e=>{let next=structuredClone(state);next.mode=Number(e.target.value);next.sel={};next.T=null;await persist(next)};
-$('generate').onclick=async()=>{let m=Number(state.mode),keys=m===8?[...Array.from({length:4},(_,i)=>'A-'+i),...Array.from({length:4},(_,i)=>'B-'+i)]:Array.from({length:m},(_,i)=>'Giocatori-'+i);let ids=keys.map(k=>String(state.sel[k]||''));if(ids.some(x=>!x)||new Set(ids).size!==m)return alertMsg('Selezioni '+m+' giocatori differenti.',true);let matches;try{matches=m===4?pairs4(shuffle(ids)):m===6?schedule6(shuffle(ids)):schedule8(ids.slice(0,4),ids.slice(4))}catch(e){return alertMsg(e.message,true)}if(state.T?.matches?.some(g=>g.scores?.every(v=>v!==null))&&!confirm('Sostituire il calendario e cancellare tutti i risultati?'))return;let next=structuredClone(state);next.T={title:$('tournamentName').value.trim()||'Torneo Padel Leon',ids,matches};await persist(next)};
-$('reset').onclick=async()=>{if(!confirm('Creare un nuovo torneo? Il calendario e i risultati correnti saranno eliminati.'))return;let next=structuredClone(state);next.T=null;next.sel={};await persist(next)};
-$('addPlayer').onclick=async()=>{if(!admin())return;let n=prompt('Nome e cognome del giocatore:');if(!n?.trim())return;let next=structuredClone(state);next.players=[...currentPlayers(),{id:crypto.randomUUID(),name:n.trim()}];await persist(next)};
-$('savePlayers').onclick=async()=>{if(!admin())return;let next=structuredClone(state);let map=new Map([...document.querySelectorAll('[data-player]')].map(e=>[e.dataset.player,e.value.trim()]));if([...map.values()].some(x=>!x))return alertMsg('I nomi non possono essere vuoti.',true);next.players=currentPlayers().map(p=>({...p,name:map.get(p.id)??p.name}));await persist(next)};
-$('loginBtn').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;const {error}=await sb.auth.signInWithPassword({email,password});if(error)return alertMsg(error.message,true);$('password').value='';await authRefresh();await load();showTab('torneo')};
-$('logoutBtn').onclick=async()=>{const {error}=await sb.auth.signOut();if(error)return alertMsg(error.message,true);await authRefresh();showTab('login')};
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-sb.auth.onAuthStateChange(()=>{setTimeout(authRefresh,0)});
-sb.channel('padel-state').on('postgres_changes',{event:'UPDATE',schema:'public',table:'torneo_stato',filter:'id=eq.1'},()=>load()).subscribe();
-(async()=>{await authRefresh();await load()})();
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Torneo Padel Leon</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f2;--card:#fff;--ink:#0b2a33;--mut:#5b727a;--line:#d5e0e0;--a:#e8a317;--b:#0f7c8a;--f:Figtree,system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1c21;--card:#12292f;--ink:#e8f1f1;--mut:#8fa8ae;--line:#244047}}
+:root[data-theme="dark"]{--bg:#0a1c21;--card:#12292f;--ink:#e8f1f1;--mut:#8fa8ae;--line:#244047}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--f)}
+h1,h2{font-family:'Bricolage Grotesque',var(--f);letter-spacing:-.02em;margin:0}
+h1{font-size:28px;font-weight:800}h2{font-size:20px;margin:18px 0 8px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;border-bottom:1px solid var(--line);padding:12px 16px 0}
+.in{max-width:760px;margin:0 auto}
+.pill{font-size:13px;color:var(--mut)}
+nav{display:flex;gap:2px;overflow-x:auto;margin-top:6px}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font:600 15px var(--f);color:var(--mut);cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--ink);border-color:var(--b)}
+main{max-width:760px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0 0 12px;overflow-x:auto}
+.mut{color:var(--mut);font-size:14px;margin:4px 0}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:15px}
+th{font-size:13px;color:var(--mut);font-weight:600}
+.n{text-align:right;font-variant-numeric:tabular-nums}
+.lead td{font-weight:700}
+input,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:90px}
+select{min-width:60px;cursor:pointer}
+input[type=number]{width:58px;min-width:0;text-align:center}
+.p,.s{border-radius:8px;font:600 15px var(--f);cursor:pointer;padding:10px 16px}
+.p{background:var(--b);color:#fff;border:0}.p:disabled{opacity:.4;cursor:default}
+.s{background:none;border:1px solid var(--line);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.bd{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font:700 11px var(--f);font-style:normal;color:#0b2a33;margin-right:6px}
+.bd.A{background:var(--a)}.bd.B{background:var(--b);color:#fff}.sexname.M{color:#1976d2;font-weight:700}.sexname.F{color:#e78ab3;font-weight:700}.sortbtn{background:none;border:0;padding:0;color:inherit;font:inherit;font-weight:inherit;cursor:pointer;white-space:nowrap}.sortbtn::after{content:" ↕";font-size:11px;opacity:.45}.sortbtn.up::after{content:" ↑";opacity:1}.sortbtn.down::after{content:" ↓";opacity:1}
+.m{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.t{display:flex;flex-direction:column;gap:2px;font-size:15px}
+.sc{display:flex;gap:6px;align-items:center}
+.seg{display:flex;gap:4px}.seg button{width:38px;height:34px;border:1px solid var(--line);background:none;border-radius:6px;color:var(--ink);font:600 14px var(--f);cursor:pointer}
+.seg .A.on{background:var(--a);border-color:var(--a);color:#0b2a33}.seg .B.on{background:var(--b);border-color:var(--b);color:#fff}
+.updateplus{color:#1976d2;font-weight:800;white-space:nowrap}.updateneg{color:#e78ab3;font-weight:800;white-space:nowrap}.previewbox{border:2px solid var(--b);border-radius:10px;padding:12px;margin-top:12px}.public{display:inline-block}.x{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px}
+.user-hidden{display:none!important}
+.login-overlay{position:fixed;inset:0;z-index:20;background:#0009;display:none;align-items:center;justify-content:center;padding:18px}.login-overlay.open{display:flex}.login-card{width:100%;max-width:380px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 12px 40px #0003}.login-card label{display:block;font-weight:600;margin:12px 0 5px}.login-card input{min-width:0;padding:11px}.login-card .row button{flex:1}
+:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+@media(max-width:540px){.m{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px}.sc{gap:2px}.sc input{width:45px}.t{font-size:13px}.bd{width:18px;height:18px;margin-right:3px}.card{padding:10px}th,td{padding:7px 4px;font-size:13px}}
+</style></head><body>
+<header><div class="in"><h1>🎾 Torneo Padel Leon</h1><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
+<main id="v"></main>
+<div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="login-card">
+    <h2 id="loginTitle" style="margin-top:0">Accedi al Torneo Padel Leon</h2>
+    <form id="loginForm" onsubmit="submitLogin(event)" autocomplete="on">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" name="username" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="nome@esempio.it">
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Password">
+      <div class="row"><button class="p" id="loginSubmit" type="submit">Accedi</button><button class="s" type="button" onclick="closeLogin()">Annulla</button></div>
+      <p class="mut">Il browser può proporre gli account già salvati e compilare i campi automaticamente.</p>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL='https://aelwovphlzesshsvflst.supabase.co',SUPABASE_KEY='sb_publishable_OwMYzJuBbxb0-WX8ub25_g_TKyaU5Sq';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let S={players:[],sel:{},T:null,mode:4},tab='live',ROLE='NONE',ADMIN=false,AUTH=null,timer,q=Promise.resolve();
+let sorts={generale:{key:'med',dir:-1},gruppi:{key:'med',dir:-1}};
+const norm=d=>{d=d&&typeof d=='object'?d:{};const players=(d.players||[]).map(p=>{const oldG=Number.isFinite(+p.g)?+p.g:0;const t=Number.isFinite(+p.t)?+p.t:Math.floor(oldG/5);return{...p,t}});return{players,sel:d.sel||{},T:d.T||null,mode:[4,6,8].includes(Number(d.mode||d.T?.mode))?Number(d.mode||d.T?.mode):4}};
+function setSt(t,err){const e=document.getElementById('st');if(e){e.textContent=t;e.style.color=err?'#c0392b':''}}
+function save(){if(ROLE!=='ADMIN'&&ROLE!=='USER')return;clearTimeout(timer);setSt('Salvataggio…');timer=setTimeout(()=>{const snap=JSON.parse(JSON.stringify(S));
+q=q.then(()=>sb.rpc('salva_stato_auth',{p_data:snap})).then(({error})=>setSt(error?'Errore di salvataggio: '+error.message:'Salvato',!!error)).catch(()=>setSt('Errore di rete',true))},350)}
+async function fetchState(){const{data,error}=await sb.from('torneo_stato').select('data').eq('id',1).single();if(error){setSt('Errore di lettura: '+error.message,true);return false}S=norm(data.data);return true}
+async function login(){
+  if(AUTH){
+    setSt('Uscita…');
+    const {error}=await sb.auth.signOut();
+    if(error){setSt('Errore di uscita: '+error.message,true);return}
+    AUTH=null;ROLE='NONE';ADMIN=false;
+    setSt('Accesso richiesto');
+    tab=S.T?'live':'gruppi';
+    R();
+    return;
+  }
+  openLogin();
+}
+function openLogin(){
+  const o=document.getElementById('loginOverlay');
+  o.classList.add('open');
+  setTimeout(()=>document.getElementById('loginEmail')?.focus(),50);
+}
+function closeLogin(){
+  document.getElementById('loginOverlay').classList.remove('open');
+}
+async function submitLogin(event){
+  event.preventDefault();
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  const button=document.getElementById('loginSubmit');
+  if(!email||!password)return;
+  button.disabled=true;button.textContent='Accesso…';setSt('Accesso…');
+  const{data,error}=await sb.auth.signInWithPassword({email,password});
+  button.disabled=false;button.textContent='Accedi';
+  if(error){setSt('Accesso negato',true);alert('Email o password non corretti.');document.getElementById('loginPassword').select();return}
+  closeLogin();
+  document.getElementById('loginPassword').value='';
+  await setAuth(data.user);
+}
+async function setAuth(user){
+  AUTH=user||null;
+  if(!user){ROLE='NONE';ADMIN=false;setSt('Accesso richiesto');R();return}
+  const{data,error}=await sb.rpc('get_my_role');
+  if(error||!data){await sb.auth.signOut();AUTH=null;ROLE='NONE';ADMIN=false;setSt('Ruolo non configurato',true);alert('Utente autenticato ma ruolo non configurato in Supabase.');R();return}
+  ROLE=String(data).toUpperCase();ADMIN=ROLE==='ADMIN';
+  if(ROLE!=='ADMIN'&&ROLE!=='USER'){await sb.auth.signOut();AUTH=null;ROLE='NONE';ADMIN=false;setSt('Ruolo non valido',true);R();return}
+  await fetchState();
+  if(ADMIN && S.T && !S.T.applied && S.T.review==='pending' && isComplete(S.T)){tab='aggiorna';}else tab=S.T?'live':'gruppi';
+  R();
+}
+async function init(){
+  R();
+  const{data}=await sb.auth.getSession();
+  await setAuth(data.session?.user||null);
+  sb.auth.onAuthStateChange(async(_event,session)=>{await setAuth(session?.user||null)});
+  sb.channel('torneo').on('postgres_changes',{event:'*',schema:'public',table:'torneo_stato'},p=>{
+    // Gli aggiornamenti realtime servono agli utenti, ma l'Admin non deve
+    // sovrascrivere le modifiche locali mentre sta editando la classifica.
+    if(!ADMIN&&p.new&&p.new.data){S=norm(p.new.data);R()}
+  }).subscribe();
+  setInterval(async()=>{
+    // Anche il polling non deve sovrascrivere lo stato locale dell'Admin.
+    if(!ADMIN&&await fetchState())R()
+  },30000)
+}
+const med=p=>p.t?p.tot/p.t:0,done=m=>m.s1!==''&&m.s2!==''&&Number.isFinite(+m.s1)&&Number.isFinite(+m.s2);
+const isComplete=T=>!!T&&T.rounds?.length===cfg(T.mode).rounds&&T.rounds.every(r=>r.matches.every(done));
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const key=p=>[...p].sort().join('-');
+const used=T=>{const s=new Set();T.rounds.forEach(r=>r.matches.forEach(m=>{s.add(key(m.t1));s.add(key(m.t2))}));return s};
+function cfg(mode=S.T?.mode||S.mode){
+  mode=Number(mode);
+  return mode===6?{mode:6,players:6,group:3,matches:1,rounds:9}:mode===8?{mode:8,players:8,group:4,matches:2,rounds:6}:{mode:4,players:4,group:2,matches:1,rounds:6};
+}
+function setMode(m){
+  if(S.T&&S.T.mode!==m){if(!confirm('Il torneo attuale verrà azzerato. Continuare?'))return;S.T=null;S.sel={}}
+  S.mode=m;save();R();
+}
+function resetTournament(){
+  if(!S.T||!confirm('Azzerare il torneo? I risultati non verranno aggiunti alla Classifica Generale.'))return;
+  S.T=null;S.sel={};save();go('gruppi');
+}
+// I calendari sono creati tutti all'avvio: 6 partite a testa in ogni modalità.
+// La ricerca privilegia partner diversi e avversari variati.
+function makeSchedule(A,B,mode){
+  const ids=[...A,...B],games=[];
+  if(mode===4){
+    const [a,b,c,d]=ids;
+    const blocks=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]];
+    for(let i=0;i<6;i++){
+      const t=blocks[i%3];games.push({A:ids,matches:[{t1:[...t[0]],t2:[...t[1]],s1:'',s2:''}]});
+    }
+    return games;
+  }
+  if(mode===8){
+    let best=null,bestScore=Infinity;
+    for(let attempt=0;attempt<850;attempt++){
+      const partners={},opps={},rounds=[];let score=0;
+      for(let r=0;r<6;r++){
+        const aa=sh(A),bb=sh(B),pairs=aa.map((id,i)=>[id,bb[i]]);
+        let local=null,ls=Infinity;
+        const variants=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+        for(const variant of variants){
+          let sc=0;
+          for(const pair of pairs){const k=key(pair);sc+=Math.pow(partners[k]||0,2)*60+(partners[k]||0)*14}
+          for(const [i,j] of variant){for(const x of pairs[i])for(const y of pairs[j]){const k=key([x,y]);sc+=(opps[k]||0)*4}}
+          if(sc<ls){ls=sc;local=variant}
+        }
+        score+=ls;
+        for(const pair of pairs){const k=key(pair);partners[k]=(partners[k]||0)+1}
+        const matches=local.map(([i,j])=>{for(const x of pairs[i])for(const y of pairs[j]){const k=key([x,y]);opps[k]=(opps[k]||0)+1}return {t1:pairs[i],t2:pairs[j],s1:'',s2:''}});
+        rounds.push({A:[...A],matches});
+      }
+      const repeats=Object.values(partners).reduce((sum,n)=>sum+Math.max(0,n-1)**2,0);
+      score+=repeats*70;
+      if(score<bestScore){bestScore=score;best=rounds}
+      if(repeats===8&&score<350)break;
+    }
+    return best;
+  }
+  // 6 giocatori: 9 partite, ciascuno gioca 6 volte e riposa 3.
+  // Valutiamo numerosi calendari e minimizziamo squilibri e partner ripetuti.
+  let best=null,bestScore=Infinity;
+  for(let trial=0;trial<1800;trial++){
+    const count=Object.fromEntries(ids.map(x=>[x,0]));
+    const mates={},opps={},rests={},rounds=[];let penalty=0;
+    for(let r=0;r<9;r++){
+      const eligible=sh(ids).sort((x,y)=>count[x]-count[y]);
+      const active=eligible.slice(0,4);
+      const resting=ids.filter(x=>!active.includes(x));
+      const restKey=key(resting);penalty+=(rests[restKey]||0)*12;rests[restKey]=(rests[restKey]||0)+1;
+      for(const x of active)count[x]++;
+      const variants=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+      let bestVariant=null,local=Infinity;
+      for(const v of variants){
+        let sc=0;
+        for(const pair of v){sc+=(mates[key(pair.map(i=>active[i]))]||0)*30}
+        for(const x of v[0])for(const y of v[1])sc+=(opps[key([active[x],active[y]])]||0)*3;
+        if(sc<local){local=sc;bestVariant=v}
+      }
+      penalty+=local;
+      for(const pair of bestVariant){const k=key(pair.map(i=>active[i]));mates[k]=(mates[k]||0)+1}
+      for(const x of bestVariant[0])for(const y of bestVariant[1]){const k=key([active[x],active[y]]);opps[k]=(opps[k]||0)+1}
+      rounds.push({A:ids,matches:[{t1:bestVariant[0].map(i=>active[i]),t2:bestVariant[1].map(i=>active[i]),s1:'',s2:''}],rest:resting});
+    }
+    penalty+=ids.reduce((v,id)=>v+Math.abs(count[id]-6)*1000,0);
+    if(penalty<bestScore){bestScore=penalty;best=rounds}
+    if(bestScore<35)break;
+  }
+  return best;
+}
+function table(){const T=S.T,t={};Object.keys(T.names).forEach(id=>t[id]={id,pt:0,g:0,w:0,d:0,l:0,pf:0,ps:0});
+T.rounds.forEach(r=>r.matches.forEach(m=>{if(!done(m))return;const a=+m.s1,b=+m.s2;[[m.t1,a,b],[m.t2,b,a]].forEach(([tm,f,s])=>tm.forEach(id=>{const x=t[id];x.g++;x.pf+=f;x.ps+=s;if(f>s){x.pt+=3;x.w++}else if(f===s){x.pt++;x.d++}else x.l++}))}));
+return Object.values(t).sort((a,b)=>b.pt-a.pt||(b.pf-b.ps)-(a.pf-a.ps)||b.pf-a.pf)}
+function go(t){tab=t;R()}
+function sortBy(view,key){
+  const x=sorts[view]||{};
+  if(x.key===key)x.dir*=-1;else{ x.key=key;x.dir=key==='n'||key==='c'||key==='s'?1:-1 }
+  sorts[view]=x;R();
+}
+function cmpVal(a,b,key){
+  let x,y;
+  if(key==='med'){x=med(a);y=med(b)}
+  else if(key==='g'){x=a.g||0;y=b.g||0}
+  else if(key==='tot'){x=a.tot||0;y=b.tot||0}
+  else if(key==='n'||key==='c'||key==='s'){x=(a[key]||'').toLocaleLowerCase('it');y=(b[key]||'').toLocaleLowerCase('it')}
+  else{x=a[key]??0;y=b[key]??0}
+  if(typeof x==='string')return x.localeCompare(y,'it',{sensitivity:'base'})
+  return x-y;
+}
+function sortedPlayers(view){
+  const o=sorts[view]||{key:'med',dir:-1};
+  return [...S.players].sort((a,b)=>cmpVal(a,b,o.key)*o.dir || (a.id||'').localeCompare(b.id||''));
+}
+function th(view,label,key,cls=''){
+  const o=sorts[view]||{}; const state=o.key===key?(o.dir===1?'up':'down'):'';
+  return `<th class="${cls}"><button class="sortbtn ${state}" onclick="sortBy('${view}','${key}')">${label}</button></th>`;
+}
+function R(){
+  document.getElementById('nav').innerHTML=[['live','Classifica live'],['turni','Turni'],['gruppi','Gruppi'],['generale','Classifica Generale']].map(([k,l])=>`<button class="${tab==k?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
+  document.getElementById('v').innerHTML=({live,turni,gruppi,generale,aggiorna})[tab]();
+  document.getElementById('ab').textContent=AUTH?(ADMIN?'Esci':'Esci'):'Login';
+  if(!AUTH){setSt('Login richiesto per modificare il torneo');document.querySelectorAll('#v input, #v select').forEach(i=>i.disabled=true);document.querySelectorAll('#v button:not(.sortbtn)').forEach(e=>{if(!e.closest('nav'))e.disabled=true});}
+  else if(!ADMIN){setSt('Utente · torneo modificabile');document.querySelectorAll('#v .adm').forEach(e=>e.remove());document.querySelectorAll('#v input, #v select').forEach(i=>{if(tab==='generale')i.disabled=true});}
+  else setSt('Admin · accesso completo');
+}
+const none=()=>`<div class="card"><h2>Nessun torneo in corso</h2><p>Scegli la modalità, seleziona i giocatori e avvia il torneo.</p><button class="p" onclick="go('gruppi')">Scegli i giocatori</button></div>`;
+function live(){const T=S.T;if(!T)return none();const t=table(),C=cfg(T.mode),completed=isComplete(T);
+return `<p class="mut">${T.rounds.flatMap(r=>r.matches).filter(done).length}/${T.rounds.flatMap(r=>r.matches).length} partite completate · ${C.rounds} turni</p><div class="card"><table><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr>${t.map((x,i)=>`<tr class="${i?'':'lead'}"><td>${i+1}</td><td><i class="bd ${T.grp[x.id]||'A'}">${T.grp[x.id]||'A'}</i><span class="sexname ${S.players.find(p=>p.id==x.id)?.s=='F'?'F':'M'}">${esc(T.names[x.id])}</span></td><td class="n">${x.pt}</td><td class="n">${x.g}</td><td class="n">${x.w}</td><td class="n">${x.d}</td><td class="n">${x.l}</td><td class="n">${x.pf-x.ps}</td></tr>`).join('')}</table></div><p class="mut">Vittoria 3 punti · pareggio 1 · sconfitta 0. A parità: differenza punti, poi punti fatti.</p>${completed&&!T.applied?`<div class="row"><button class="p public" onclick="proponiAggiornamento()">Aggiorna classifica generale</button></div>`:completed&&T.applied?`<p class="mut">Classifica Generale già aggiornata con questo torneo.</p>`:''}`}
+const team=(T,r,tm)=>`<div class="t">${tm.map(id=>{const g=T.grp[id]||'A';const p=S.players.find(x=>x.id==id);const sex=p?.s=='F'?'F':'M';return `<span><i class="bd ${g}">${g}</i><span class="sexname ${sex}">${esc(T.names[id])}</span></span>`}).join('')}</div>`;
+function turni(){const T=S.T;if(!T)return none();const C=cfg(T.mode),n=T.rounds.length;
+return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>`+T.rounds.map((r,i)=>`<h2>Turno ${i+1}</h2>${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+r.matches.map((m,k)=>`<div class="card"><div class="mut">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${+m.s1===+m.s2?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}</div>`).join('')).join('')}
+const split=()=>{const C=cfg(),ids=S.players.filter(p=>S.sel[p.id]).sort((a,b)=>med(b)-med(a)).map(p=>p.id);return{A:ids.slice(0,C.group),B:ids.slice(C.group,C.players)}};
+function gruppi(){
+  const C=cfg(),P=sortedPlayers('gruppi'),n=P.filter(p=>S.sel[p.id]).length,ok=n===C.players,g=ok?split():null;
+  const col=(L,ids)=>`<div style="min-width:0"><div style="margin-bottom:8px"><i class="bd ${L}">${L}</i><b>Gruppo ${L}</b></div><table><tr><th>Nome</th><th>Cognome</th><th class="n">Tornei</th><th class="n">Media</th></tr>${ids.map(id=>{const p=S.players.find(x=>x.id==id);return `<tr><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td>${esc(p.c)}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`}).join('')}</table></div>`;
+  return `<div class="card"><h2>Modalità torneo</h2><div class="row"><button class="${C.mode===4?'p':'s'}" onclick="setMode(4)">1 campo · 4 giocatori</button><button class="${C.mode===6?'p':'s'}" onclick="setMode(6)">1 campo · 6 giocatori</button><button class="${C.mode===8?'p':'s'}" onclick="setMode(8)">2 campi · 8 giocatori</button>${S.T?'<button class="s" onclick="resetTournament()">Azzera torneo</button>':''}</div><p class="mut">Ogni partecipante giocherà 6 partite. ${C.mode===8?'Squadre sempre AB contro AB.':C.mode===6?'Due giocatori a riposo per turno.':'Ogni coppia di compagni si ripete due volte.'}</p></div>
+  <div class="card"><p>Selezioni ${C.players} giocatori dalla Classifica Generale. ${C.mode===8?'I 4 giocatori con media più alta formeranno il gruppo A e gli altri 4 il gruppo B.':'I gruppi A e B sono indicativi e servono per visualizzare i partecipanti.'}</p><p><b>${n}/${C.players} selezionati</b></p><div class="row"><button class="s" onclick="selTop()">Seleziona i primi ${C.players}</button><button class="s" onclick="S.sel={};save();R()">Azzera selezione</button></div>${P.length<C.players?`<p class="mut">Servono almeno ${C.players} giocatori nella Classifica Generale.</p>`:''}<table><tr><th></th>${th('gruppi','Nome','n')}${th('gruppi','Cognome','c')}${th('gruppi','Sesso','s')}${th('gruppi','Tornei','t','n')}${th('gruppi','Media','med','n')}</tr>${P.map(p=>`<tr><td><input type="checkbox" style="width:22px;height:22px;min-width:0" aria-label="Seleziona ${esc(p.n)} ${esc(p.c)}" ${S.sel[p.id]?'checked':''} ${!S.sel[p.id]&&n>=C.players?'disabled':''} onchange="tg('${p.id}')"></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td>${esc(p.c)}</td><td>${p.s||'M'}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`).join('')}</table></div>
+  ${ok?`<div class="card"><div class="m" style="align-items:start">${col('A',g.A)}<span></span>${col('B',g.B)}</div><div class="row"><button class="p" onclick="start()">Avvia torneo</button></div></div>`:''}`;
+}
+function generale(){
+  const P=sortedPlayers('generale'),I=(id,f,v,t)=>`<input class="sexname ${S.players.find(x=>x.id==id)?.s=='F'?'F':'M'}" ${t||''} value="${esc(v)}" onchange="ed('${id}','${f}',this.value)">`,Sel=(id,v)=>`<select onchange="ed('${id}','s',this.value)"><option value="M" ${v=='M'?'selected':''}>M</option><option value="F" ${v=='F'?'selected':''}>F</option></select>`;
+  return `<div class="card"><table><tr><th>#</th>${th('generale','Nome','n')}${th('generale','Cognome','c')}${th('generale','Sesso','s')}${th('generale','Punti','tot','n')}${th('generale','Tornei','t','n')}${th('generale','Media','med','n')}<th></th></tr>${P.map((p,i)=>`<tr><td>${i+1}</td><td>${I(p.id,'n',p.n)}</td><td>${I(p.id,'c',p.c)}</td><td>${Sel(p.id,p.s||'M')}</td><td>${I(p.id,'tot',p.tot,'type="number" min="0"')}</td><td>${I(p.id,'t',p.t,'type="number" min="0"')}</td><td class="n"><b>${med(p).toFixed(2)}</b></td><td class="adm"><button class="x" aria-label="Elimina" onclick="del('${p.id}')">✕</button></td></tr>`).join('')}</table></div>
+<div class="card adm"><div class="row"><input id="nn" placeholder="Nome" style="flex:1"><input id="nc" placeholder="Cognome" style="flex:1"><select id="ns" style="width:auto"><option value="M">M</option><option value="F">F</option></select><button class="p" onclick="add()">Aggiungi</button></div><p class="mut">Media = punti totali ÷ tornei giocati.</p><button class="s" onclick="if(confirm('Eliminare tutti i giocatori e il torneo?')){S={players:[],sel:{},T:null,mode:4};save();R()}">Svuota tutto</button></div>`}
+
+function ed(id,f,v){const p=S.players.find(x=>x.id==id);p[f]=(f=='n'||f=='c'||f=='s')?v.trim():Math.max(0,+v||0);save();R()}
+function del(id){S.players=S.players.filter(x=>x.id!=id);delete S.sel[id];save();R()}
+function add(){const n=nn.value.trim(),c=nc.value.trim(),s=ns.value;if(!n)return;S.players.push({id:'p'+Date.now().toString(36),n,c,s,tot:0,t:0});save();R()}
+function tg(id){if(S.sel[id])delete S.sel[id];else if(Object.keys(S.sel).length<cfg().players)S.sel[id]=1;save();R()}
+function selTop(){S.sel={};[...S.players].sort((a,b)=>med(b)-med(a)).slice(0,cfg().players).forEach(p=>S.sel[p.id]=1);save();R()}
+function start(){
+  if(S.T&&!confirm('Il torneo in corso verrà azzerato. Continuare?'))return;
+  const C=cfg(),g=split(),names={},grp={};g.A.forEach(id=>grp[id]='A');g.B.forEach(id=>grp[id]='B');
+  S.players.forEach(p=>{if(grp[p.id])names[p.id]=p.n+' '+(p.c||'').charAt(0)+'.'});
+  S.T={mode:C.mode,players:C.players,names,grp,applied:false,review:null,rounds:makeSchedule(g.A,g.B,C.mode)};
+  save();go('turni');
+}
+function sc(i,k,f,v){
+  if(!S.T||!AUTH)return;
+  S.T.rounds[i].matches[k][f]=v===''?'':Math.max(0,Math.floor(Number(v)||0));
+  if(!S.T.applied){S.T.review=isComplete(S.T)?'pending':null}
+  save();
+  if(isComplete(S.T)&&!S.T.applied){go('live');return}
+  R();
+}
+function updateRows(){
+  return table().map(x=>{
+    const p=S.players.find(q=>q.id==x.id);
+    return {id:x.id,name:p?.n||'',surname:p?.c||'',sex:p?.s||'M',oldTot:p?.tot||0,oldT:p?.t||0,addPt:x.pt,addT:1,newTot:(p?.tot||0)+x.pt,newT:(p?.t||0)+1,newMed:((p?.t||0)+1)?((p?.tot||0)+x.pt)/((p?.t||0)+1):0};
+  });
+}
+function aggiorna(){
+  const T=S.T;
+  if(!T)return none();
+  if(!isComplete(T))return `<div class="card"><h2>Aggiornamento classifica generale</h2><p>Prima devono essere completati tutti i risultati del torneo.</p></div>`;
+  if(T.applied)return `<div class="card"><h2>Classifica Generale già aggiornata</h2><p>Questo torneo è già stato contabilizzato.</p></div>`;
+  if(T.review==='rejected')return `<div class="card"><h2>Aggiornamento classifica rifiutato</h2><p>La proposta non è stata applicata. È possibile riproporla dalla Classifica live.</p><button class="p" onclick="proponiAggiornamento()">Riproporre aggiornamento</button></div>`;
+  const rows=updateRows();
+  return `<div class="card"><h2>Aggiorna classifica generale</h2><p>Questa è un'anteprima delle modifiche che verranno applicate. I valori con <b>+</b> indicano ciò che verrà aggiunto alla classifica.</p><div class="previewbox"><table><tr><th>Giocatore</th><th class="n">Punti attuali</th><th class="n">Variazione</th><th class="n">Tornei attuali</th><th class="n">Nuovi tornei</th><th class="n">Nuova media</th></tr>${rows.map(r=>`<tr><td><span class="sexname ${r.sex=='F'?'F':'M'}">${esc(r.name)} ${esc(r.surname)}</span></td><td class="n">${r.oldTot}</td><td class="n"><b class="updateplus">+${r.addPt}</b></td><td class="n">${r.oldT}</td><td class="n"><b class="updateplus">+${r.addT}</b></td><td class="n"><b>${r.newMed.toFixed(2)}</b></td></tr>`).join('')}</table></div>${ADMIN?`<div class="row"><button class="p" onclick="confirmUpdate()">Conferma e aggiorna classifica</button><button class="s" onclick="rejectUpdate()">Rifiuta proposta</button></div>`:`<p class="mut">Proposta pronta. Solo l'Admin può confermare e applicare queste modifiche.</p>`}</div>`;
+}
+function rejectUpdate(){
+  if(!ADMIN || !S.T || S.T.applied)return;
+  if(!confirm('Rifiutare la proposta di aggiornamento della Classifica Generale?'))return;
+  S.T.review='rejected';
+  save();
+  go('live');
+}
+function proponiAggiornamento(){
+  if(!S.T || S.T.applied)return;
+  S.T.review='pending';
+  save();
+  go('aggiorna');
+}
+function confirmUpdate(){
+  if(!ADMIN || !S.T || S.T.applied)return;
+  const rows=updateRows();
+  if(!confirm("Confermare l'aggiornamento della Classifica Generale per tutti i "+rows.length+" giocatori?"))return;
+  rows.forEach(r=>{const p=S.players.find(q=>q.id==r.id);if(p){p.tot=r.newTot;p.t=r.newT}});
+  S.T.applied=true;
+  S.T.review='approved';
+  save();
+  go('generale');
+}
+function applyG(){go('aggiorna')}
+init();
 </script></body></html>
