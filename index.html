@@ -123,7 +123,10 @@ async function init(){
   R();
   const{data}=await sb.auth.getSession();
   await setAuth(data.session?.user||null);
-  sb.auth.onAuthStateChange(async(_event,session)=>{await setAuth(session?.user||null)});
+  // Non attendere chiamate Supabase nel callback Auth: può bloccare signOut().
+  sb.auth.onAuthStateChange((_event,session)=>{
+    setTimeout(()=>{void setAuth(session?.user||null)},0);
+  });
   sb.channel('torneo').on('postgres_changes',{event:'*',schema:'public',table:'torneo_stato'},p=>{
     // Gli aggiornamenti realtime servono agli utenti, ma l'Admin non deve
     // sovrascrivere le modifiche locali mentre sta editando la classifica.
