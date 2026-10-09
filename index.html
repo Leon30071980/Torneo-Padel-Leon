@@ -138,7 +138,7 @@ async function init(){
   },30000)
 }
 const med=p=>p.t?p.tot/p.t:0,done=m=>m.s1!==''&&m.s2!==''&&Number.isFinite(+m.s1)&&Number.isFinite(+m.s2);
-const isComplete=T=>!!T&&T.rounds?.length===cfg(T.mode).rounds&&T.rounds.every(r=>r.matches.every(done));
+const isComplete=T=>!!T&&!legacyEight(T)&&T.rounds?.length===cfg(T.mode).rounds&&T.rounds.every(r=>r.matches.every(done));
 const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const key=p=>[...p].sort().join('-');
 const used=T=>{const s=new Set();T.rounds.forEach(r=>r.matches.forEach(m=>{s.add(key(m.t1));s.add(key(m.t2))}));return s};
@@ -167,30 +167,9 @@ function makeSchedule(A,B,mode){
     return games;
   }
   if(mode===8){
-    let best=null,bestScore=Infinity;
-    for(let attempt=0;attempt<850;attempt++){
-      const partners={},opps={},rounds=[];let score=0;
-      for(let r=0;r<6;r++){
-        const aa=sh(A),bb=sh(B),pairs=aa.map((id,i)=>[id,bb[i]]);
-        let local=null,ls=Infinity;
-        const variants=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
-        for(const variant of variants){
-          let sc=0;
-          for(const pair of pairs){const k=key(pair);sc+=Math.pow(partners[k]||0,2)*60+(partners[k]||0)*14}
-          for(const [i,j] of variant){for(const x of pairs[i])for(const y of pairs[j]){const k=key([x,y]);sc+=(opps[k]||0)*4}}
-          if(sc<ls){ls=sc;local=variant}
-        }
-        score+=ls;
-        for(const pair of pairs){const k=key(pair);partners[k]=(partners[k]||0)+1}
-        const matches=local.map(([i,j])=>{for(const x of pairs[i])for(const y of pairs[j]){const k=key([x,y]);opps[k]=(opps[k]||0)+1}return {t1:pairs[i],t2:pairs[j],s1:'',s2:''}});
-        rounds.push({A:[...A],matches});
-      }
-      const repeats=Object.values(partners).reduce((sum,n)=>sum+Math.max(0,n-1)**2,0);
-      score+=repeats*70;
-      if(score<bestScore){bestScore=score;best=rounds}
-      if(repeats===8&&score<350)break;
-    }
-    return best;
+    // Come Beach Volley: si genera soltanto il primo turno.
+    // I turni successivi dipendono dai risultati appena inseriti.
+    return [makeRoundAB(A,B,[])];
   }
   // 6 giocatori: 9 partite, ciascuno gioca 6 volte e riposa 3.
   // Valutiamo numerosi calendari e minimizziamo squilibri e partner ripetuti.
@@ -222,6 +201,81 @@ function makeSchedule(A,B,mode){
     if(bestScore<35)break;
   }
   return best;
+}
+// Genera coppie AB contro AB. Prima evita partner gia' incontrati;
+// quando non e' possibile, minimizza le ripetizioni e gli avversari ricorrenti.
+function makeRoundAB(A,B,previousRounds){
+  if(A.length!==4||B.length!==4||new Set([...A,...B]).size!==8){
+    throw Error('Per ogni turno servono 4 giocatori A e 4 B distinti.');
+  }
+  const partnerCount={},opponentCount={};
+  for(const r of previousRounds){
+    for(const m of r.matches){
+      for(const tm of [m.t1,m.t2]){
+        const k=key(tm);partnerCount[k]=(partnerCount[k]||0)+1;
+      }
+      for(const x of m.t1)for(const y of m.t2){
+        const k=key([x,y]);opponentCount[k]=(opponentCount[k]||0)+1;
+      }
+    }
+  }
+  const sexes=Object.fromEntries(S.players.map(p=>[p.id,p.s||'M']));
+  let best=null,bestScore=Infinity;
+  // 24 permutazioni dei partner B, tre accoppiamenti fra quattro coppie.
+  const perms=a=>a.length? a.flatMap((v,i)=>perms(a.filter((_,j)=>j!==i)).map(q=>[v,...q])):[[]];
+  const layouts=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+  for(const shuffledA of [A, [...A].reverse()]){
+    for(const bs of perms(B)){
+      const pairs=shuffledA.map((id,i)=>[id,bs[i]]);
+      for(const layout of layouts){
+        let score=0;
+        for(const pair of pairs){
+          const n=partnerCount[key(pair)]||0;
+          score+=n*100+n*n*20;
+        }
+        for(const [i,j] of layout){
+          const x=pairs[i],y=pairs[j];
+          for(const a of x)for(const b of y){
+            const n=opponentCount[key([a,b])]||0;
+            score+=n*5;
+          }
+          const men=t=>t.filter(id=>sexes[id]==='M').length;
+          const mx=men(x),my=men(y);
+          if((mx===0&&my!==0)||(my===0&&mx!==0))score+=30;
+          if((mx===0&&my===2)||(mx===2&&my===0))score+=30;
+        }
+        // Scelta casuale in caso di parita': mantiene una certa varieta'.
+        score+=Math.random()*0.01;
+        if(score<bestScore){bestScore=score;best=layout.map(([i,j])=>({t1:pairs[i],t2:pairs[j],s1:'',s2:''}));}
+      }
+    }
+  }
+  return {A:[...A],matches:best};
+}
+function legacyEight(T){return T?.mode===8 && T.scheduleVersion!==2;}
+function roundReady(r){
+  return r.matches.every(done);
+}
+// In caso di pareggio il sorteggio assegna una squadra al gruppo A
+// e l'altra al gruppo B esclusivamente ai fini del turno successivo.
+// Il risultato resta un pareggio e assegna 1 punto a ogni giocatore.
+function nextRound(){
+  const T=S.T;
+  if(!AUTH||!T||T.mode!==8||legacyEight(T)||T.rounds.length>=6)return;
+  const last=T.rounds[T.rounds.length-1];
+  if(!roundReady(last)){alert('Inserisca entrambi i risultati prima di generare il turno successivo.');return;}
+  const A=[],B=[];
+  last.matches.forEach(m=>{
+    if(+m.s1===+m.s2 && m.advance!==1 && m.advance!==2){
+      m.advance=Math.random()<0.5?1:2;
+    }
+    const first=+m.s1>+m.s2 || (+m.s1===+m.s2 && m.advance===1);
+    A.push(...(first?m.t1:m.t2));B.push(...(first?m.t2:m.t1));
+  });
+  try{
+    T.rounds.push(makeRoundAB(A,B,T.rounds));
+    T.review=null;save();R();
+  }catch(e){setSt('Errore generazione turno: '+e.message,true);}
 }
 function table(){const T=S.T,t={};Object.keys(T.names).forEach(id=>t[id]={id,pt:0,g:0,w:0,d:0,l:0,pf:0,ps:0});
 T.rounds.forEach(r=>r.matches.forEach(m=>{if(!done(m))return;const a=+m.s1,b=+m.s2;[[m.t1,a,b],[m.t2,b,a]].forEach(([tm,f,s])=>tm.forEach(id=>{const x=t[id];x.g++;x.pf+=f;x.ps+=s;if(f>s){x.pt+=3;x.w++}else if(f===s){x.pt++;x.d++}else x.l++}))}));
@@ -260,16 +314,31 @@ function R(){
 }
 const none=()=>`<div class="card"><h2>Nessun torneo in corso</h2><p>Scegli la modalità, seleziona i giocatori e avvia il torneo.</p><button class="p" onclick="go('gruppi')">Scegli i giocatori</button></div>`;
 function live(){const T=S.T;if(!T)return none();const t=table(),C=cfg(T.mode),completed=isComplete(T);
-return `<p class="mut">${T.rounds.flatMap(r=>r.matches).filter(done).length}/${T.rounds.flatMap(r=>r.matches).length} partite completate · ${C.rounds} turni</p><div class="card"><table><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr>${t.map((x,i)=>`<tr class="${i?'':'lead'}"><td>${i+1}</td><td><i class="bd ${T.grp[x.id]||'A'}">${T.grp[x.id]||'A'}</i><span class="sexname ${S.players.find(p=>p.id==x.id)?.s=='F'?'F':'M'}">${esc(T.names[x.id])}</span></td><td class="n">${x.pt}</td><td class="n">${x.g}</td><td class="n">${x.w}</td><td class="n">${x.d}</td><td class="n">${x.l}</td><td class="n">${x.pf-x.ps}</td></tr>`).join('')}</table></div><p class="mut">Vittoria 3 punti · pareggio 1 · sconfitta 0. A parità: differenza punti, poi punti fatti.</p>${completed&&!T.applied?`<div class="row"><button class="p public" onclick="proponiAggiornamento()">Aggiorna classifica generale</button></div>`:completed&&T.applied?`<p class="mut">Classifica Generale già aggiornata con questo torneo.</p>`:''}`}
-const team=(T,r,tm)=>`<div class="t">${tm.map(id=>{const g=T.grp[id]||'A';const p=S.players.find(x=>x.id==id);const sex=p?.s=='F'?'F':'M';return `<span><i class="bd ${g}">${g}</i><span class="sexname ${sex}">${esc(T.names[id])}</span></span>`}).join('')}</div>`;
-function turni(){const T=S.T;if(!T)return none();const C=cfg(T.mode),n=T.rounds.length;
-return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>`+T.rounds.map((r,i)=>`<h2>Turno ${i+1}</h2>${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+r.matches.map((m,k)=>`<div class="card"><div class="mut">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${+m.s1===+m.s2?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}</div>`).join('')).join('')}
+return `<p class="mut">${T.rounds.flatMap(r=>r.matches).filter(done).length}/${T.rounds.flatMap(r=>r.matches).length} partite completate · ${C.rounds} turni</p><div class="card"><table><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr>${t.map((x,i)=>`<tr class="${i?'':'lead'}"><td>${i+1}</td><td><i class="bd ${T.mode===8?(T.rounds.at(-1).A.includes(x.id)?'A':'B'):(T.grp[x.id]||'A')}">${T.mode===8?(T.rounds.at(-1).A.includes(x.id)?'A':'B'):(T.grp[x.id]||'A')}</i><span class="sexname ${S.players.find(p=>p.id==x.id)?.s=='F'?'F':'M'}">${esc(T.names[x.id])}</span></td><td class="n">${x.pt}</td><td class="n">${x.g}</td><td class="n">${x.w}</td><td class="n">${x.d}</td><td class="n">${x.l}</td><td class="n">${x.pf-x.ps}</td></tr>`).join('')}</table></div><p class="mut">Vittoria 3 punti · pareggio 1 · sconfitta 0. A parità: differenza punti, poi punti fatti.</p>${legacyEight(T)?'<p class="mut">Calendario precedente: apra Turni per aggiornarlo.</p>':''}${completed&&!T.applied?`<div class="row"><button class="p public" onclick="proponiAggiornamento()">Aggiorna classifica generale</button></div>`:completed&&T.applied?`<p class="mut">Classifica Generale già aggiornata con questo torneo.</p>`:''}`}
+const team=(T,r,tm)=>`<div class="t">${tm.map(id=>{const g=T.mode===8?(r.A.includes(id)?'A':'B'):(T.grp[id]||'A');const p=S.players.find(x=>x.id==id);const sex=p?.s=='F'?'F':'M';return `<span><i class="bd ${g}">${g}</i><span class="sexname ${sex}">${esc(T.names[id])}</span></span>`}).join('')}</div>`;
+function turni(){
+  const T=S.T;if(!T)return none();const C=cfg(T.mode),n=T.rounds.length;
+  if(legacyEight(T))return `<div class="card"><h2>Calendario da aggiornare</h2><p>Questo torneo usa il precedente calendario fisso: non prevede il passaggio dei vincitori nel gruppo A e degli sconfitti nel gruppo B.</p><p>Per utilizzare le nuove regole occorre iniziare un nuovo torneo. La Classifica Generale non verrà cancellata.</p><button class="p" onclick="resetTournament()">Azzera il vecchio torneo</button></div>`;
+  const current=T.rounds[n-1],ready=roundReady(current);
+  const nextBtn=T.mode===8 && n<6?`<div class="row"><button class="p" ${ready?'':'disabled'} onclick="nextRound()">Genera turno ${n+1}</button></div><p class="mut">I vincitori diventano gruppo A e gli sconfitti gruppo B. In caso di pareggio, i gruppi vengono assegnati casualmente. Il nuovo turno si genera dopo tutti i risultati.</p>`:'';
+  return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>${nextBtn}`+
+  T.rounds.map((r,i)=>`<h2>Turno ${i+1}</h2>${T.mode===8?`<p class="mut">Gruppo A: ${r.A.map(id=>esc(T.names[id])).join(', ')} · Gruppo B: ${Object.keys(T.names).filter(id=>!r.A.includes(id)).map(id=>esc(T.names[id])).join(', ')}</p>`:''}${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+
+  r.matches.map((m,k)=>{
+    const locked=T.mode===8 && (i<n-1 || T.applied);
+    const isDraw=done(m)&&+m.s1===+m.s2;
+    const tieNotice=T.mode===8 && isDraw && (m.advance===1||m.advance===2)
+      ? `<p class="mut">Sorteggio per i gruppi: squadra ${m.advance} in A, squadra ${m.advance===1?2:1} in B.</p>`
+      : T.mode===8 && isDraw && n<6
+      ? `<p class="mut">I gruppi A e B saranno assegnati casualmente alla generazione del prossimo turno.</p>` : '';
+    return `<div class="card"><div class="mut">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" ${locked?'disabled':''} aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" ${locked?'disabled':''} aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${isDraw?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}${tieNotice}</div>`;
+  }).join('')).join('');
+}
 const split=()=>{const C=cfg(),ids=S.players.filter(p=>S.sel[p.id]).sort((a,b)=>med(b)-med(a)).map(p=>p.id);return{A:ids.slice(0,C.group),B:ids.slice(C.group,C.players)}};
 function gruppi(){
   const C=cfg(),P=sortedPlayers('gruppi'),n=P.filter(p=>S.sel[p.id]).length,ok=n===C.players,g=ok?split():null;
   const col=(L,ids)=>`<div style="min-width:0"><div style="margin-bottom:8px"><i class="bd ${L}">${L}</i><b>Gruppo ${L}</b></div><table><tr><th>Nome</th><th>Cognome</th><th class="n">Tornei</th><th class="n">Media</th></tr>${ids.map(id=>{const p=S.players.find(x=>x.id==id);return `<tr><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td>${esc(p.c)}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`}).join('')}</table></div>`;
   return `<div class="card"><h2>Modalità torneo</h2><div class="row"><button class="${C.mode===4?'p':'s'}" onclick="setMode(4)">1 campo · 4 giocatori</button><button class="${C.mode===6?'p':'s'}" onclick="setMode(6)">1 campo · 6 giocatori</button><button class="${C.mode===8?'p':'s'}" onclick="setMode(8)">2 campi · 8 giocatori</button>${S.T?'<button class="s" onclick="resetTournament()">Azzera torneo</button>':''}</div><p class="mut">Ogni partecipante giocherà 6 partite. ${C.mode===8?'Squadre sempre AB contro AB.':C.mode===6?'Due giocatori a riposo per turno.':'Ogni coppia di compagni si ripete due volte.'}</p></div>
-  <div class="card"><p>Selezioni ${C.players} giocatori dalla Classifica Generale. ${C.mode===8?'I 4 giocatori con media più alta formeranno il gruppo A e gli altri 4 il gruppo B.':'I gruppi A e B sono indicativi e servono per visualizzare i partecipanti.'}</p><p><b>${n}/${C.players} selezionati</b></p><div class="row"><button class="s" onclick="selTop()">Seleziona i primi ${C.players}</button><button class="s" onclick="S.sel={};save();R()">Azzera selezione</button></div>${P.length<C.players?`<p class="mut">Servono almeno ${C.players} giocatori nella Classifica Generale.</p>`:''}<table><tr><th></th>${th('gruppi','Nome','n')}${th('gruppi','Cognome','c')}${th('gruppi','Sesso','s')}${th('gruppi','Tornei','t','n')}${th('gruppi','Media','med','n')}</tr>${P.map(p=>`<tr><td><input type="checkbox" style="width:22px;height:22px;min-width:0" aria-label="Seleziona ${esc(p.n)} ${esc(p.c)}" ${S.sel[p.id]?'checked':''} ${!S.sel[p.id]&&n>=C.players?'disabled':''} onchange="tg('${p.id}')"></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td>${esc(p.c)}</td><td>${p.s||'M'}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`).join('')}</table></div>
+  <div class="card"><p>Selezioni ${C.players} giocatori dalla Classifica Generale. ${C.mode===8?'Al primo turno i 4 giocatori con media più alta formeranno il gruppo A e gli altri 4 il gruppo B. Dopo ogni turno chi vince passa nel gruppo A e chi perde nel gruppo B.':'I gruppi A e B sono indicativi e servono per visualizzare i partecipanti.'}</p><p><b>${n}/${C.players} selezionati</b></p><div class="row"><button class="s" onclick="selTop()">Seleziona i primi ${C.players}</button><button class="s" onclick="S.sel={};save();R()">Azzera selezione</button></div>${P.length<C.players?`<p class="mut">Servono almeno ${C.players} giocatori nella Classifica Generale.</p>`:''}<table><tr><th></th>${th('gruppi','Nome','n')}${th('gruppi','Cognome','c')}${th('gruppi','Sesso','s')}${th('gruppi','Tornei','t','n')}${th('gruppi','Media','med','n')}</tr>${P.map(p=>`<tr><td><input type="checkbox" style="width:22px;height:22px;min-width:0" aria-label="Seleziona ${esc(p.n)} ${esc(p.c)}" ${S.sel[p.id]?'checked':''} ${!S.sel[p.id]&&n>=C.players?'disabled':''} onchange="tg('${p.id}')"></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td>${esc(p.c)}</td><td>${p.s||'M'}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`).join('')}</table></div>
   ${ok?`<div class="card"><div class="m" style="align-items:start">${col('A',g.A)}<span></span>${col('B',g.B)}</div><div class="row"><button class="p" onclick="start()">Avvia torneo</button></div></div>`:''}`;
 }
 function generale(){
@@ -286,15 +355,19 @@ function start(){
   if(S.T&&!confirm('Il torneo in corso verrà azzerato. Continuare?'))return;
   const C=cfg(),g=split(),names={},grp={};g.A.forEach(id=>grp[id]='A');g.B.forEach(id=>grp[id]='B');
   S.players.forEach(p=>{if(grp[p.id])names[p.id]=p.n+' '+(p.c||'').charAt(0)+'.'});
-  S.T={mode:C.mode,players:C.players,names,grp,applied:false,review:null,rounds:makeSchedule(g.A,g.B,C.mode)};
+  S.T={mode:C.mode,scheduleVersion:2,players:C.players,names,grp,applied:false,review:null,rounds:makeSchedule(g.A,g.B,C.mode)};
   save();go('turni');
 }
 function sc(i,k,f,v){
   if(!S.T||!AUTH)return;
-  S.T.rounds[i].matches[k][f]=v===''?'':Math.max(0,Math.floor(Number(v)||0));
-  if(!S.T.applied){S.T.review=isComplete(S.T)?'pending':null}
+  const T=S.T;
+  if(T.mode===8&&(legacyEight(T)||i!==T.rounds.length-1||T.applied))return;
+  const m=T.rounds[i].matches[k];
+  m[f]=v===''?'':Math.max(0,Math.floor(Number(v)||0));
+  if(T.mode===8)delete m.advance;
+  if(!T.applied){T.review=isComplete(T)?'pending':null}
   save();
-  if(isComplete(S.T)&&!S.T.applied){go('live');return}
+  if(isComplete(T)&&!T.applied){go('live');return}
   R();
 }
 function updateRows(){
