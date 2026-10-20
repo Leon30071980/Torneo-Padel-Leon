@@ -67,7 +67,7 @@ input[type=number]{width:58px;min-width:0;text-align:center}
       <circle cx="22" cy="38" r="2.2"/><circle cx="29" cy="38" r="2.2"/><circle cx="36" cy="37" r="2.2"/>
     </g>
   </g>
-</svg> Torneo Padel Leon</h1><div class="app-version">Versione 9.3</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
+</svg> Torneo Padel Leon</h1><div class="app-version">Versione 9.4</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
 <main id="v"></main>
 <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
   <div class="login-card">
@@ -87,7 +87,18 @@ input[type=number]{width:58px;min-width:0;text-align:center}
 const SUPABASE_URL='https://aelwovphlzesshsvflst.supabase.co',SUPABASE_KEY='sb_publishable_OwMYzJuBbxb0-WX8ub25_g_TKyaU5Sq';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let S={players:[],sel:{},T:null,mode:4},tab='live',ROLE='NONE',ADMIN=false,AUTH=null,timer,q=Promise.resolve(),HISTORY=[],HISTORY_ERROR='';
+// Ricorda solamente la scheda, in questo browser. Nessun dato del torneo viene salvato localmente.
+const LAST_TAB_KEY='torneo_padel_leon:last_tab';
+const VALID_TABS=new Set(['live','turni','gruppi','generale','storico','aggiorna']);
+function loadLastTab(){
+  try{const t=localStorage.getItem(LAST_TAB_KEY);return VALID_TABS.has(t)?t:'live';}
+  catch(e){return 'live';} // Funziona anche quando lo storage è bloccato.
+}
+function rememberTab(t){
+  if(!VALID_TABS.has(t))return;
+  try{localStorage.setItem(LAST_TAB_KEY,t)}catch(e){}
+}
+let S={players:[],sel:{},T:null,mode:4},tab=loadLastTab(),ROLE='NONE',ADMIN=false,AUTH=null,timer,q=Promise.resolve(),HISTORY=[],HISTORY_ERROR='';
 let approving=false;
 let sorts={generale:{key:'med',dir:-1},gruppi:{key:'med',dir:-1}};
 const norm=d=>{d=d&&typeof d=='object'?d:{};const players=(d.players||[]).map(p=>{const oldG=Number.isFinite(+p.g)?+p.g:0;const t=Number.isFinite(+p.t)?+p.t:Math.floor(oldG/5);return{...p,t,vinti:Math.max(0,Number(p.vinti)||0),ultimo:Math.max(0,Number(p.ultimo)||0)}});return{players,sel:d.sel||{},T:d.T||null,mode:[4,6,8].includes(Number(d.mode||d.T?.mode))?Number(d.mode||d.T?.mode):4}};
@@ -109,7 +120,7 @@ async function login(){
     if(error){setSt('Errore di uscita: '+error.message,true);return}
     AUTH=null;ROLE='NONE';ADMIN=false;
     setSt('Accesso richiesto');
-    tab=S.T?'live':'gruppi';
+    if(tab==='aggiorna'){tab='live';rememberTab(tab)}
     R();
     return;
   }
@@ -139,14 +150,16 @@ async function submitLogin(event){
 }
 async function setAuth(user){
   AUTH=user||null;
-  if(!user){ROLE='NONE';ADMIN=false;setSt('Accesso richiesto');R();return}
+  if(!user){ROLE='NONE';ADMIN=false;setSt('Accesso richiesto');if(tab==='aggiorna'){tab='live';rememberTab(tab)}R();return}
   const{data,error}=await sb.rpc('get_my_role');
   if(error||!data){await sb.auth.signOut();AUTH=null;ROLE='NONE';ADMIN=false;setSt('Ruolo non configurato',true);alert('Utente autenticato ma ruolo non configurato in Supabase.');R();return}
   ROLE=String(data).toUpperCase();ADMIN=ROLE==='ADMIN';
   if(ROLE!=='ADMIN'&&ROLE!=='USER'){await sb.auth.signOut();AUTH=null;ROLE='NONE';ADMIN=false;setSt('Ruolo non valido',true);R();return}
   await fetchState();
   void fetchHistory();
-  if(ADMIN && S.T && !S.T.applied && S.T.review==='pending' && isComplete(S.T)){tab='aggiorna';}else tab=S.T?'live':'gruppi';
+  // Non cambiare la pagina aperta al login o al ritorno nell'app.
+  // L'area di approvazione è accessibile solo se ancora pertinente.
+  if(tab==='aggiorna' && !(ADMIN && S.T && !S.T.applied && isComplete(S.T))){tab='live';rememberTab(tab)}
   R();
 }
 async function init(){
@@ -333,7 +346,7 @@ function nextRound(){
 function table(){const T=S.T,t={};Object.keys(T.names).forEach(id=>t[id]={id,pt:0,g:0,w:0,d:0,l:0,pf:0,ps:0});
 T.rounds.forEach(r=>r.matches.forEach(m=>{if(!done(m))return;const a=+m.s1,b=+m.s2;[[m.t1,a,b],[m.t2,b,a]].forEach(([tm,f,s])=>tm.forEach(id=>{const x=t[id];x.g++;x.pf+=f;x.ps+=s;if(f>s){x.pt+=3;x.w++}else if(f===s){x.pt++;x.d++}else x.l++}))}));
 return Object.values(t).sort((a,b)=>b.pt-a.pt||(b.pf-b.ps)-(a.pf-a.ps)||b.pf-a.pf||String(T.names[a.id]||'').localeCompare(String(T.names[b.id]||''),'it'))}
-function go(t){tab=t;R();if(t==='storico')void fetchHistory()}
+function go(t){if(!VALID_TABS.has(t))return;tab=t;rememberTab(t);R();if(t==='storico')void fetchHistory()}
 function sortBy(view,key){
   const x=sorts[view]||{};
   if(x.key===key)x.dir*=-1;else{ x.key=key;x.dir=key==='n'||key==='c'||key==='s'?1:-1 }
