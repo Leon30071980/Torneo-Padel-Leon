@@ -33,6 +33,9 @@ th{font-size:13px;color:var(--mut);font-weight:600}
 input,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:90px}
 select{min-width:60px;cursor:pointer}
 input[type=number]{width:58px;min-width:0;text-align:center}
+/* Risultati: inserimento da tastiera, senza frecce incrementa/decrementa. */
+.sc input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.sc input[type=number]::-webkit-inner-spin-button,.sc input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .p,.s{border-radius:8px;font:600 15px var(--f);cursor:pointer;padding:10px 16px}
 .p{background:var(--b);color:#fff;border:0}.p:disabled{opacity:.4;cursor:default}
 .s{background:none;border:1px solid var(--line);color:var(--ink)}
@@ -50,7 +53,7 @@ input[type=number]{width:58px;min-width:0;text-align:center}
 :focus-visible{outline:2px solid var(--b);outline-offset:2px}
 @media(max-width:540px){.m{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px}.sc{gap:2px}.sc input{width:45px}.t{font-size:13px}.bd{width:18px;height:18px;margin-right:3px}.card{padding:10px}th,td{padding:7px 4px;font-size:13px}}
 </style></head><body>
-<header><div class="in"><h1>🎾 Torneo Padel Leon</h1><div class="app-version">Versione 9.1 · Storico tornei</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
+<header><div class="in"><h1>🎾 Torneo Padel Leon</h1><div class="app-version">Versione 9.2 · Storico tornei</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
 <main id="v"></main>
 <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
   <div class="login-card">
