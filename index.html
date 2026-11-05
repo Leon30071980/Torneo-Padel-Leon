@@ -2,6 +2,8 @@
 <html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Torneo Padel Leon</title>
+<meta name="theme-color" content="#071e29">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071e29'/%3E%3Cg transform='rotate(-30 32 32)'%3E%3Crect x='27' y='40' width='10' height='20' rx='4' fill='%2327d6d2'/%3E%3Crect x='12' y='5' width='40' height='43' rx='19' fill='%2310aab4' stroke='%2398f5ef' stroke-width='3'/%3E%3Cg fill='%23091e28'%3E%3Ccircle cx='25' cy='16' r='3'/%3E%3Ccircle cx='38' cy='16' r='3'/%3E%3Ccircle cx='20' cy='28' r='3'/%3E%3Ccircle cx='32' cy='28' r='3'/%3E%3Ccircle cx='44' cy='28' r='3'/%3E%3Ccircle cx='26' cy='39' r='3'/%3E%3Ccircle cx='39' cy='39' r='3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -52,8 +54,243 @@ input[type=number]{width:58px;min-width:0;text-align:center}
 .login-overlay{position:fixed;inset:0;z-index:20;background:#0009;display:none;align-items:center;justify-content:center;padding:18px}.login-overlay.open{display:flex}.login-card{width:100%;max-width:380px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 12px 40px #0003}.login-card label{display:block;font-weight:600;margin:12px 0 5px}.login-card input{min-width:0;padding:11px}.login-card .row button{flex:1}
 :focus-visible{outline:2px solid var(--b);outline-offset:2px}
 @media(max-width:540px){.m{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px}.sc{gap:2px}.sc input{width:45px}.t{font-size:13px}.bd{width:18px;height:18px;margin-right:3px}.card{padding:10px}th,td{padding:7px 4px;font-size:13px}}
+
+/* ============================================================
+   PADEL LEON v9.5 — PETROL / TURQUOISE SPORTS RESTYLE
+   Visual layer only: v9.4 tournament and Supabase logic remain.
+   ============================================================ */
+:root,:root[data-theme="light"],:root[data-theme="dark"]{
+  --bg:#061c27;--card:#10323e;--card2:#113a47;--ink:#eaf8fb;
+  --mut:#a4bdc7;--line:#2b5460;--a:#f8bd55;--b:#23c5c9;
+  --teal:#23c5c9;--teal-soft:#77eee8;--petrol:#061c27;
+  --f:'Exo 2',system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+html{background:#061c27;scroll-behavior:smooth}
+body{
+  background:radial-gradient(ellipse 830px 580px at 80% -100px,rgba(21,179,193,.17),transparent 70%),
+    radial-gradient(ellipse 600px 570px at -25% 56%,rgba(18,106,123,.12),transparent 76%),
+    linear-gradient(170deg,#071e29,#061924 60%,#051721);
+  background-attachment:fixed;
+  min-height:100vh;font-weight:500;letter-spacing:.005em;
+}
+header{
+  background:linear-gradient(160deg,rgba(10,45,57,.98),rgba(5,26,37,.98));
+  border-bottom:1px solid rgba(76,210,216,.29);
+  box-shadow:0 8px 36px rgba(0,0,0,.24);padding:12px 18px 0;
+  backdrop-filter:blur(14px);
+}
+.in,main{max-width:1060px}
+header .in{position:relative}
+h1{font-size:clamp(19px,3.5vw,29px);font-weight:800;gap:12px;line-height:1.1;letter-spacing:-.033em}
+.brand-logo{display:inline-grid;place-items:center;flex-shrink:0;width:54px;height:54px;
+  background:linear-gradient(145deg,rgba(33,211,208,.21),rgba(9,89,103,.24));
+  border:1px solid rgba(83,222,221,.48);border-radius:18px;
+  box-shadow:0 0 0 4px rgba(41,176,186,.045),inset 0 1px 0 rgba(255,255,255,.16);
+}
+.brand-logo svg{width:36px;height:44px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.25))}
+.brand-wordmark{background:linear-gradient(110deg,#ffffff,#c5f5f4 69%,#42d7d4);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.app-version{margin:1px 0 0 66px;letter-spacing:.16em;text-transform:uppercase;font-size:10px;
+  font-weight:800;color:#81cbd0}
+header .row{margin:5px 0 9px!important}
+.pill{color:#acd0d9;font-weight:700;letter-spacing:.02em;font-size:12px}
+#ab{border-color:rgba(76,218,215,.3);background:rgba(8,64,74,.68);color:#c9eeed;
+  border-radius:24px!important;font-size:12px!important;font-weight:800!important;min-height:32px}
+#ab:hover{border-color:var(--teal);background:rgba(29,133,142,.26)}
+nav{gap:7px;scrollbar-width:thin;scrollbar-color:#1d6870 transparent;
+  margin-top:7px;padding:3px 0 9px}
+nav button{border:1px solid transparent;border-radius:10px;padding:10px 14px;
+  background:rgba(17,63,75,.60);font-size:13px;font-weight:800;color:#b2d1d7;
+  transition:background .2s,border-color .2s,transform .2s;white-space:nowrap}
+nav button:hover{background:rgba(31,99,113,.7);color:#f3ffff;transform:translateY(-1px)}
+nav button.on{color:#072631;border-color:#75e6e2;background:linear-gradient(135deg,#53e0d9,#23bfc5);
+  box-shadow:0 6px 20px rgba(29,208,213,.18)}
+nav button:nth-child(1)::before{content:'◉ ';font-size:12px}
+nav button:nth-child(2)::before{content:'▤ ';font-size:12px}
+nav button:nth-child(3)::before{content:'◈ ';font-size:12px}
+nav button:nth-child(4)::before{content:'▥ ';font-size:12px}
+nav button:nth-child(5)::before{content:'◷ ';font-size:12px}
+main{padding:23px 18px 44px}
+main>h2,main>h3{color:#dff7f6}
+h2{font-size:20px;font-weight:800;color:#f1fcfc;letter-spacing:-.027em}
+h3{font-size:16px;color:#cfedef}
+.card{
+  position:relative;margin-bottom:16px;padding:20px 20px;
+  border-radius:16px;border:1px solid rgba(102,190,198,.24);
+  background:linear-gradient(149deg,rgba(20,62,74,.95),rgba(10,43,55,.97));
+  box-shadow:0 8px 30px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.045);
+  overflow-x:auto;
+}
+.card h2:first-child{margin-top:0}
+.card:has(>h2:first-child){border-top:2px solid rgba(54,208,204,.42)}
+.mut{color:#a4bfca;font-weight:500;line-height:1.55}
+p{line-height:1.6}
+.p,.s{transition:transform .15s,border-color .15s,background .15s,box-shadow .15s;
+  border-radius:10px;font-family:var(--f);font-size:14px;font-weight:800;min-height:39px}
+.p{color:#06242e;background:linear-gradient(135deg,#65e8df,#21b6c1);border:1px solid #83faf0;
+  box-shadow:0 4px 13px rgba(14,166,174,.19)}
+.p:hover:not(:disabled){transform:translateY(-1px);background:linear-gradient(135deg,#a5fcf4,#37d8d7)}
+.p:disabled{opacity:.46;box-shadow:none}
+.s{color:#cdebf0;border:1px solid #3a6570;background:rgba(9,39,51,.4)}
+.s:hover:not(:disabled){background:#1b5060;border-color:#65cecb;transform:translateY(-1px)}
+.x{color:#d7adb7}
+input,select{color:#eefbfc;background:#092b38;border:1px solid #37616e;border-radius:9px;
+  font-weight:600;min-height:36px}
+input:focus-visible,select:focus-visible{outline:2px solid #55e9e2;outline-offset:1px;border-color:#58ede6}
+input:disabled,select:disabled{opacity:.74}
+input::placeholder{color:#83a4ae}
+input[type=checkbox]{accent-color:#24c5c9}
+/* Numeric scores remain spinner-free; retains mobile inputmode=numeric. */
+.sc input[type=number]{background:linear-gradient(155deg,#051e2b,#0d4553);border:1px solid #3a8b94;
+  font-size:21px;font-weight:800;color:#f4ffff;border-radius:10px;min-height:46px;
+  -moz-appearance:textfield;appearance:textfield}
+.sc input[type=number]::-webkit-inner-spin-button,.sc input[type=number]::-webkit-outer-spin-button{
+  -webkit-appearance:none;margin:0}
+.sc{font-size:20px;font-weight:900;color:#59c7cf;gap:10px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:11px;font-weight:800;letter-spacing:.065em;text-transform:uppercase;
+  color:#a6d7df;background:rgba(3,30,43,.67);white-space:nowrap}
+th,td{padding:12px 10px;border-bottom:1px solid rgba(95,165,179,.14)}
+tr:last-child td{border-bottom:0}
+td{font-size:14px;font-weight:600;color:#e1f1f5}
+tbody tr:hover td{background-color:rgba(61,180,190,.07)}
+.sortbtn{font-size:inherit;font-weight:800;letter-spacing:inherit;text-transform:inherit}
+.sortbtn:hover{color:#78f2ed}
+.bd{width:22px;height:22px;font-size:11px;font-weight:800;
+  box-shadow:0 0 0 1px rgba(255,255,255,.09)}
+.bd.A{background:#eeb859;color:#152d33}.bd.B{background:#2cc9d1;color:#062932}
+.sexname.M{color:#86c4ff;font-weight:800}
+.sexname.F{color:#ffa2d0;font-weight:800}
+.seg button{background:#0b3341;border:1px solid #366778;color:#d9f4f8}
+.seg .A.on{background:#f2bc63;color:#102e35}
+.seg .B.on{background:#37d4d0;color:#082b33}
+.previewbox{border:1px solid #4ccdc9;background:rgba(4,32,43,.6);border-radius:13px}
+.updateplus{color:#5be7d4}
+.hist-date{color:#a7cbd4}
+.hist-round{border-color:#346977}
+.hist-item summary{font-size:15px;color:#effafa;letter-spacing:.01em}
+.hist-item[open]{border-top:2px solid #49d7d0}
+.hist-match{border-radius:11px;background:rgba(4,35,48,.44);padding:12px 11px;margin-top:8px;
+  border:1px solid rgba(73,160,174,.16)}
+.hist-match .vs{color:#84eee9;font-size:20px}
+.hist-team{font-size:13px}
+.login-overlay{background:rgba(1,15,25,.82);backdrop-filter:blur(8px)}
+.login-card{background:linear-gradient(150deg,#154252,#082835);border-color:#3e8b94;
+  border-radius:20px;box-shadow:0 24px 68px #0008;padding:28px}
+.login-card h2{color:#e9fcfc}
+/* Sports panels, standings, and champion / last-place spotlight cards */
+.section-hero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;
+  gap:16px;padding:18px 22px;margin-bottom:16px;overflow:hidden;position:relative;
+  border:1px solid rgba(66,212,212,.3);border-radius:17px;
+  background:linear-gradient(115deg,rgba(18,84,98,.87),rgba(10,42,55,.9) 67%),
+  repeating-linear-gradient(145deg,transparent 0,transparent 22px,rgba(255,255,255,.03) 23px,transparent 24px)}
+.section-hero:after{content:'';width:225px;height:225px;position:absolute;right:-96px;top:-102px;
+  border:1px solid rgba(105,240,228,.2);border-radius:50%;box-shadow:0 0 0 24px rgba(40,204,199,.035),0 0 0 48px rgba(40,204,199,.025);pointer-events:none}
+.eyebrow{font-size:10px;letter-spacing:.19em;color:#6ce6df;font-weight:900;text-transform:uppercase;margin-bottom:6px}
+.section-hero h2{margin:0;font-size:clamp(21px,3.1vw,29px);color:#effcfc;line-height:1.2}
+.section-hero p{margin:7px 0 0;color:#bbd6de;font-size:13px}
+.hero-metric{font-weight:900;font-size:19px;color:#e7fffc;line-height:1}
+.hero-metric small{display:block;color:#9acbd3;font-size:10px;font-weight:800;letter-spacing:.1em;margin-top:7px}
+.sport-metrics{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.sport-metrics>div{min-width:70px;border-left:1px solid #376978;padding-left:15px}
+.spotlight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.spotlight{padding:17px 18px;border-radius:15px;position:relative;overflow:hidden;min-width:0;
+  box-shadow:0 10px 29px #020d1740}
+.spotlight:after{position:absolute;right:-15px;bottom:-45px;content:'';width:145px;height:145px;
+  border:1px solid rgba(255,255,255,.11);border-radius:50%;pointer-events:none}
+.spotlight-winner{background:linear-gradient(125deg,#4b3a1f,#152e36 65%);border:1px solid #987641}
+.spotlight-last{background:linear-gradient(125deg,#27414f,#112c39 72%);border:1px solid #5d7b8e}
+.spotlight-top{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.spotlight-label{font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:#e8c98c}
+.spotlight-last .spotlight-label{color:#b2cbd9}
+.spotlight-pos{font-size:11px;font-weight:900;color:#f4d797;border:1px solid #b7924b;
+  border-radius:99px;padding:2px 8px;white-space:nowrap}
+.spotlight-last .spotlight-pos{color:#d1e4ed;border-color:#6e96a5}
+.spotlight-name{font-size:clamp(15px,2.6vw,21px);line-height:1.3;font-weight:900;overflow-wrap:anywhere}
+.spotlight-stats{font-size:12px;color:#bfd3da;margin-top:9px;font-weight:700}
+.ranking-card{padding:0;overflow:hidden}
+.rank-scroll{width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.rank-table{min-width:540px}
+.rank-table th:first-child,.rank-table td:first-child{padding-left:19px}
+.rank-table th:last-child,.rank-table td:last-child{padding-right:19px}
+.rank-table td{padding:13px 10px}
+.rank-no{color:#76d8d7;font-size:13px;font-weight:900;white-space:nowrap}
+.rank-leader td{background:linear-gradient(90deg,rgba(202,164,82,.16),rgba(202,164,82,.035))}
+.rank-last td{background:linear-gradient(90deg,rgba(108,150,165,.11),rgba(108,150,165,.025))}
+.rank-points{font-size:17px;color:#7defe3;font-weight:900}
+.rank-diff{font-weight:800;color:#a9d9df}
+.section-caption{font-size:12px;color:#94b9c2;margin:9px 2px 16px;line-height:1.6}
+.generale-card{border-top:2px solid rgba(46,204,205,.4)}
+.generale-card table{min-width:900px}
+.generale-card td{padding:9px 7px}
+.generale-card input{font-size:13px;min-height:34px;padding:7px}
+.generale-card input[type=number]{min-width:50px}
+.generale-card td .sexname{font-weight:800}
+.person-row.gender-M td{background-color:rgba(51,144,203,.045)}
+.person-row.gender-F td{background-color:rgba(238,120,170,.055)}
+.person-row:hover td{background-color:rgba(38,197,201,.10)}
+.person-row .n b{color:#8cedea}
+.group-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.group-box{padding:13px 12px;border-radius:13px;border:1px solid #486e7a;min-width:0;
+  background:linear-gradient(155deg,rgba(6,36,46,.83),rgba(12,56,67,.56));overflow-x:auto}
+.group-box.A{border-top:3px solid #f6ba5a}
+.group-box.B{border-top:3px solid #49d8d7}
+.group-box table th,.group-box table td{padding:8px 5px;font-size:12px}
+.group-box .group-head{margin-bottom:13px;font-weight:900;letter-spacing:.02em}
+.group-duo .sexname{font-size:12px}
+#riepilogo-gruppi{border-color:rgba(83,224,216,.45)}
+#riepilogo-gruppi .row{margin-top:17px}
+#riepilogo-gruppi .p{min-width:180px}
+.match-card{border-left:3px solid #27c4c6}
+.match-label{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:#7adadf;font-weight:900;margin-bottom:14px}
+.current-round-title{display:flex;align-items:center;gap:9px;font-size:22px;margin:16px 0 10px}
+.current-round-title:before{content:'';height:22px;width:5px;border-radius:6px;background:#39d6d0}
+.previous-round-title{font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#85b3bc;margin:19px 0 9px}
+.hist-summary{margin:12px 0 16px}
+.hist-summary .spotlight-grid{margin:8px 0 15px}
+.hist-summary .spotlight{padding:14px 16px}
+.hist-summary .spotlight-label{font-size:10px}
+.hist-summary .spotlight-name{font-size:17px}
+.hist-summary .spotlight-stats{margin-top:5px}
+.hist-archive-title{color:#eaf9fb}
+@media(max-width:740px){
+  main{padding:15px 12px 32px}header{padding:10px 12px 0}
+  .section-hero{padding:15px 16px;gap:12px}
+  .sport-metrics{gap:12px}
+  .sport-metrics>div{padding-left:10px}
+  .card{padding:15px;border-radius:14px}
+  .spotlight{padding:13px 12px;border-radius:13px}
+  .spotlight-grid{gap:9px}
+  .spotlight-label{font-size:9px;letter-spacing:.07em}
+  .spotlight-name{font-size:15px}
+  .spotlight-pos{font-size:10px;padding:2px 6px}
+  .spotlight-stats{font-size:11px}
+  .group-duo{gap:8px}
+  .group-box{padding:10px 7px}
+  .group-box td,.group-box th{padding:7px 4px!important;font-size:11px!important}
+  .group-box .sexname{font-size:11px}
+  .rank-table th:first-child,.rank-table td:first-child{padding-left:11px}
+  .rank-table td{padding:11px 7px}
+  .hist-summary .spotlight-name{font-size:14px}
+}
+@media(max-width:420px){
+  .brand-logo{width:43px;height:43px;border-radius:13px}
+  .brand-logo svg{width:29px;height:36px}
+  h1{gap:9px;font-size:19px}
+  .app-version{margin-left:52px}
+  nav button{padding:9px 11px;font-size:12px}
+  .m{gap:4px}
+  .sc{gap:3px}
+  .sc input[type=number]{width:44px;font-size:17px;min-height:42px}
+  .t{font-size:12px}
+  .bd{width:18px;height:18px;margin-right:3px}
+  .spotlight{padding:12px 10px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+
 </style></head><body>
-<header><div class="in"><h1><svg class="padel-racket" width="35" height="42" viewBox="0 0 56 68" role="img" aria-label="Racchetta da padel" xmlns="http://www.w3.org/2000/svg">
+<header><div class="in"><h1><span class="brand-logo"><svg class="padel-racket" width="35" height="42" viewBox="0 0 56 68" role="img" aria-label="Racchetta da padel" xmlns="http://www.w3.org/2000/svg">
   <g transform="rotate(-27 28 34)">
     <path d="M22 39h12v15H22z" fill="#0f7c8a"/>
     <rect x="22.5" y="50" width="11" height="15" rx="3" fill="#0b2a33"/>
@@ -67,7 +304,7 @@ input[type=number]{width:58px;min-width:0;text-align:center}
       <circle cx="22" cy="38" r="2.2"/><circle cx="29" cy="38" r="2.2"/><circle cx="36" cy="37" r="2.2"/>
     </g>
   </g>
-</svg> Torneo Padel Leon</h1><div class="app-version">Versione 9.4</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
+</svg></span><span class="brand-wordmark">Torneo Padel Leon</span></h1><div class="app-version">Versione 9.5</div><div class="row" style="justify-content:space-between;align-items:center;margin:4px 0"><span class="pill" id="st"></span><button class="s" id="ab" onclick="login()" style="padding:6px 12px;font-size:13px"></button></div><nav id="nav"></nav></div></header>
 <main id="v"></main>
 <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
   <div class="login-card">
@@ -378,9 +615,25 @@ function R(){
   else if(!ADMIN){setSt('Utente · torneo modificabile');document.querySelectorAll('#v .adm').forEach(e=>e.remove());document.querySelectorAll('#v input, #v select').forEach(i=>{if(tab==='generale')i.disabled=true});}
   else setSt('Admin · accesso completo');
 }
+// Solo presentazione: schede sportive per primo e ultimo classificato.
+function spotlightCard(kind,name,sex,details,position,label){
+  const winner=kind==='winner';
+  return `<article class="spotlight spotlight-${winner?'winner':'last'}"><div class="spotlight-top"><span class="spotlight-label">${winner?'🏆':'🥄'} ${esc(label|| (winner?'Vincitore':'Ultimo classificato'))}</span><span class="spotlight-pos">#${position}</span></div><div class="spotlight-name sexname ${sex==='F'?'F':'M'}">${esc(name||'—')}</div><div class="spotlight-stats">${esc(details||'')}</div></article>`;
+}
 const none=()=>`<div class="card"><h2>Nessun torneo in corso</h2><p>Scegli la modalità, seleziona i giocatori e avvia il torneo.</p><button class="p" onclick="go('gruppi')">Scegli i giocatori</button></div>`;
-function live(){const T=S.T;if(!T)return none();const t=table(),C=cfg(T.mode),completed=isComplete(T);
-return `<p class="mut">${T.rounds.flatMap(r=>r.matches).filter(done).length}/${T.rounds.flatMap(r=>r.matches).length} partite completate · ${C.rounds} turni</p><div class="card"><table><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr>${t.map((x,i)=>`<tr class="${i?'':'lead'}"><td>${i+1}</td><td><i class="bd ${T.mode===8?(T.rounds.at(-1).A.includes(x.id)?'A':'B'):(T.grp[x.id]||'A')}">${T.mode===8?(T.rounds.at(-1).A.includes(x.id)?'A':'B'):(T.grp[x.id]||'A')}</i><span class="sexname ${S.players.find(p=>p.id==x.id)?.s=='F'?'F':'M'}">${esc(T.names[x.id])}</span></td><td class="n">${x.pt}</td><td class="n">${x.g}</td><td class="n">${x.w}</td><td class="n">${x.d}</td><td class="n">${x.l}</td><td class="n">${x.pf-x.ps}</td></tr>`).join('')}</table></div><p class="mut">Vittoria 3 punti · pareggio 1 · sconfitta 0. A parità: differenza punti, poi punti fatti, infine nome in ordine alfabetico.</p>${legacyEight(T)?'<p class="mut">Calendario precedente: apra Turni per aggiornarlo.</p>':''}${completed&&!T.applied?`<div class="row"><button class="p public" onclick="proponiAggiornamento()">Aggiorna classifica generale</button></div>`:completed&&T.applied?`<p class="mut">Classifica Generale già aggiornata con questo torneo.</p>`:''}`}
+function live(){
+  const T=S.T;if(!T)return none();
+  const t=table(),C=cfg(T.mode),completed=isComplete(T);
+  const played=T.rounds.flatMap(r=>r.matches).filter(done).length;
+  const total=C.rounds*C.matches;
+  const winner=t[0],last=t[t.length-1];
+  const getSex=id=>S.players.find(p=>p.id==id)?.s||'M';
+  const badge=id=>T.mode===8?(T.rounds.at(-1).A.includes(id)?'A':'B'):(T.grp[id]||'A');
+  const cards=`<div class="spotlight-grid">${spotlightCard('winner',T.names[winner.id],getSex(winner.id),winner.pt+' punti · Diff '+(winner.pf-winner.ps),1,completed?'Vincitore':'In testa')}${spotlightCard('last',T.names[last.id],getSex(last.id),last.pt+' punti · Diff '+(last.pf-last.ps),t.length,completed?'Ultimo classificato':'Fondo classifica')}</div>`;
+  const heading=`<div class="section-hero"><div><div class="eyebrow">PADEL LEON / LIVE STANDINGS</div><h2>Classifica live</h2><p>${C.mode===8?'2 campi': '1 campo'} · ${C.players} giocatori · ${C.rounds} turni</p></div><div class="sport-metrics"><div class="hero-metric">${played}/${total}<small>PARTITE</small></div><div class="hero-metric">${completed?'100%':Math.round(played/total*100)+'%'}<small>COMPLETAMENTO</small></div></div></div>`;
+  const ranking=`<div class="card ranking-card"><div class="rank-scroll"><table class="rank-table"><thead><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr></thead><tbody>${t.map((x,i)=>`<tr class="${i===0?'rank-leader':i===t.length-1?'rank-last':''}"><td><span class="rank-no">${String(i+1).padStart(2,'0')}</span></td><td><i class="bd ${badge(x.id)}">${badge(x.id)}</i><span class="sexname ${getSex(x.id)==='F'?'F':'M'}">${esc(T.names[x.id])}</span></td><td class="n rank-points">${x.pt}</td><td class="n">${x.g}</td><td class="n">${x.w}</td><td class="n">${x.d}</td><td class="n">${x.l}</td><td class="n rank-diff">${x.pf-x.ps}</td></tr>`).join('')}</tbody></table></div></div>`;
+  return heading+cards+ranking+`<p class="section-caption">Vittoria 3 punti · pareggio 1 · sconfitta 0. A parità: differenza punti, poi punti fatti, infine ordine alfabetico.</p>${legacyEight(T)?'<p class="mut">Calendario precedente: apra Turni per aggiornarlo.</p>':''}${completed&&!T.applied?`<div class="row"><button class="p public" onclick="proponiAggiornamento()">Aggiorna classifica generale</button></div>`:completed&&T.applied?`<p class="mut">Classifica Generale già aggiornata con questo torneo.</p>`:''}`;
+}
 const team=(T,r,tm)=>`<div class="t">${tm.map(id=>{const g=T.mode===8?(r.A.includes(id)?'A':'B'):(T.grp[id]||'A');const p=S.players.find(x=>x.id==id);const sex=p?.s=='F'?'F':'M';return `<span><i class="bd ${g}">${g}</i><span class="sexname ${sex}">${esc(T.names[id])}</span></span>`}).join('')}</div>`;
 function turni(){
   const T=S.T;if(!T)return none();const C=cfg(T.mode),n=T.rounds.length;
@@ -393,7 +646,7 @@ function turni(){
   return `<p class="mut">Modalità: ${C.mode===8?'2 campi · 8 giocatori':`1 campo · ${C.players} giocatori`} · ${C.rounds} turni · 6 partite per giocatore</p>`+
   order.map(i=>{
     const r=T.rounds[i];
-    return `${i===n-1?`<h2>Turno ${i+1} · ${roundReady(r)?'Completato':'In corso'}</h2>${nextBtn}`:`${i===n-2?'<h2 class="mut">Turni precedenti</h2>':''}<h3 class="mut">Turno ${i+1} · Concluso</h3>`}`+`${T.mode===8?`<p class="mut">Gruppo A: ${r.A.map(id=>esc(T.names[id])).join(', ')} · Gruppo B: ${Object.keys(T.names).filter(id=>!r.A.includes(id)).map(id=>esc(T.names[id])).join(', ')}</p>`:''}${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+
+    return `${i===n-1?`<h2 class="current-round-title">Turno ${i+1} · ${roundReady(r)?'Completato':'In corso'}</h2>${nextBtn}`:`${i===n-2?'<h2 class="mut">Turni precedenti</h2>':''}<h3 class="previous-round-title">Turno ${i+1} · Concluso</h3>`}`+`${T.mode===8?`<p class="mut">Gruppo A: ${r.A.map(id=>esc(T.names[id])).join(', ')} · Gruppo B: ${Object.keys(T.names).filter(id=>!r.A.includes(id)).map(id=>esc(T.names[id])).join(', ')}</p>`:''}${r.rest?.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(T.names[id])).join(', ')}</p>`:''}`+
     r.matches.map((m,k)=>{
     const locked=T.mode===8 && (i<n-1 || T.applied);
     const isDraw=done(m)&&+m.s1===+m.s2;
@@ -401,21 +654,21 @@ function turni(){
       ? `<p class="mut">Sorteggio per i gruppi: squadra ${m.advance} in A, squadra ${m.advance===1?2:1} in B.</p>`
       : T.mode===8 && isDraw && n<6
       ? `<p class="mut">I gruppi A e B saranno assegnati casualmente alla generazione del prossimo turno.</p>` : '';
-    return `<div class="card"><div class="mut">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" ${locked?'disabled':''} aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" ${locked?'disabled':''} aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${isDraw?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}${tieNotice}</div>`;
+    return `<div class="card match-card"><div class="match-label">Campo ${k+1}</div><div class="m">${team(T,r,m.t1)}<div class="sc"><input type="number" min="0" inputmode="numeric" value="${m.s1}" ${locked?'disabled':''} aria-label="Punti squadra 1" onchange="sc(${i},${k},'s1',this.value)">–<input type="number" min="0" inputmode="numeric" value="${m.s2}" ${locked?'disabled':''} aria-label="Punti squadra 2" onchange="sc(${i},${k},'s2',this.value)"></div>${team(T,r,m.t2)}</div>${done(m)?`<p class="mut">${isDraw?'Pareggio: 1 punto a tutti':+m.s1>+m.s2?'Vittoria squadra 1':'Vittoria squadra 2'}</p>`:''}${tieNotice}</div>`;
     }).join('');
   }).join('');
 }
 const split=()=>{const C=cfg(),ids=S.players.filter(p=>S.sel[p.id]).sort((a,b)=>med(b)-med(a)).map(p=>p.id);return{A:ids.slice(0,C.group),B:ids.slice(C.group,C.players)}};
 function gruppi(){
   const C=cfg(),P=sortedPlayers('gruppi'),n=P.filter(p=>S.sel[p.id]).length,ok=n===C.players,g=ok?split():null;
-  const col=(L,ids)=>`<div style="min-width:0"><div style="margin-bottom:8px"><i class="bd ${L}">${L}</i><b>Gruppo ${L}</b></div><table><tr><th>Nome</th><th>Cognome</th><th class="n">Tornei</th><th class="n">Media</th></tr>${ids.map(id=>{const p=S.players.find(x=>x.id==id);return `<tr><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.c)}</span></td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`}).join('')}</table></div>`;
-  return `${ok?`<div class="card" id="riepilogo-gruppi"><h2 style="margin-top:0">Riepilogo gruppi · ${C.players} giocatori</h2><div class="m" style="align-items:start">${col('A',g.A)}<span></span>${col('B',g.B)}</div><div class="row"><button class="p" onclick="start()">Avvia torneo</button></div></div>`:''}<div class="card"><h2>Modalità torneo</h2><div class="row"><button class="${C.mode===4?'p':'s'}" onclick="setMode(4)">1 campo · 4 giocatori</button><button class="${C.mode===6?'p':'s'}" onclick="setMode(6)">1 campo · 6 giocatori</button><button class="${C.mode===8?'p':'s'}" onclick="setMode(8)">2 campi · 8 giocatori</button>${S.T?'<button class="s" onclick="resetTournament()">Azzera torneo</button>':''}</div><p class="mut">Ogni partecipante giocherà 6 partite. ${C.mode===8?'Squadre sempre AB contro AB.':C.mode===6?'Due giocatori a riposo per turno, mai consecutivamente. Preferenza alle coppie F+M; evitiamo FF contro MM.':'Ogni coppia di compagni si ripete due volte.'}</p></div>
+  const col=(L,ids)=>`<div class="group-box ${L}"><div class="group-head"><i class="bd ${L}">${L}</i>Gruppo ${L}</div><table><tr><th>Nome</th><th>Cognome</th><th class="n">Tornei</th><th class="n">Media</th></tr>${ids.map(id=>{const p=S.players.find(x=>x.id==id);return `<tr><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.c)}</span></td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`}).join('')}</table></div>`;
+  return `${ok?`<div class="card" id="riepilogo-gruppi"><h2 style="margin-top:0">Riepilogo gruppi · ${C.players} giocatori</h2><div class="group-duo">${col('A',g.A)}${col('B',g.B)}</div><div class="row"><button class="p" onclick="start()">Avvia torneo</button></div></div>`:''}<div class="card"><h2>Modalità torneo</h2><div class="row"><button class="${C.mode===4?'p':'s'}" onclick="setMode(4)">1 campo · 4 giocatori</button><button class="${C.mode===6?'p':'s'}" onclick="setMode(6)">1 campo · 6 giocatori</button><button class="${C.mode===8?'p':'s'}" onclick="setMode(8)">2 campi · 8 giocatori</button>${S.T?'<button class="s" onclick="resetTournament()">Azzera torneo</button>':''}</div><p class="mut">Ogni partecipante giocherà 6 partite. ${C.mode===8?'Squadre sempre AB contro AB.':C.mode===6?'Due giocatori a riposo per turno, mai consecutivamente. Preferenza alle coppie F+M; evitiamo FF contro MM.':'Ogni coppia di compagni si ripete due volte.'}</p></div>
   <div class="card"><p>Selezioni ${C.players} giocatori dalla Classifica Generale. ${C.mode===8?'Al primo turno i 4 giocatori con media più alta formeranno il gruppo A e gli altri 4 il gruppo B. Dopo ogni turno chi vince passa nel gruppo A e chi perde nel gruppo B.':'I gruppi A e B sono indicativi e servono per visualizzare i partecipanti.'}</p><p><b>${n}/${C.players} selezionati</b></p><div class="row"><button class="s" onclick="selTop()">Seleziona i primi ${C.players}</button><button class="s" onclick="S.sel={};save();R()">Azzera selezione</button></div>${P.length<C.players?`<p class="mut">Servono almeno ${C.players} giocatori nella Classifica Generale.</p>`:''}<table><tr><th></th>${th('gruppi','Nome','n')}${th('gruppi','Cognome','c')}${th('gruppi','Sesso','s')}${th('gruppi','Tornei','t','n')}${th('gruppi','Media','med','n')}</tr>${P.map(p=>`<tr><td><input type="checkbox" style="width:22px;height:22px;min-width:0" aria-label="Seleziona ${esc(p.n)} ${esc(p.c)}" ${S.sel[p.id]?'checked':''} ${!S.sel[p.id]&&n>=C.players?'disabled':''} onchange="tg('${p.id}')"></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.n)}</span></td><td><span class="sexname ${p.s=='F'?'F':'M'}">${esc(p.c)}</span></td><td>${p.s||'M'}</td><td class="n">${p.t||0}</td><td class="n">${med(p).toFixed(2)}</td></tr>`).join('')}</table></div>
   `;
 }
 function generale(){
   const P=sortedPlayers('generale'),I=(id,f,v,t)=>`<input class="sexname ${S.players.find(x=>x.id==id)?.s=='F'?'F':'M'}" ${t||''} value="${esc(v)}" onchange="ed('${id}','${f}',this.value)">`,Sel=(id,v)=>`<select onchange="ed('${id}','s',this.value)"><option value="M" ${v=='M'?'selected':''}>M</option><option value="F" ${v=='F'?'selected':''}>F</option></select>`;
-  return `<div class="card"><table><tr><th>#</th>${th('generale','Nome','n')}${th('generale','Cognome','c')}${th('generale','Sesso','s')}${th('generale','Punti','tot','n')}${th('generale','Tornei','t','n')}${th('generale','Media','med','n')}${th('generale','🏆 Vinti','vinti','n')}${th('generale','🥄 Ultimo','ultimo','n')}<th></th></tr>${P.map((p,i)=>`<tr><td>${i+1}</td><td>${I(p.id,'n',p.n)}</td><td>${I(p.id,'c',p.c)}</td><td>${Sel(p.id,p.s||'M')}</td><td>${I(p.id,'tot',p.tot,'type="number" min="0"')}</td><td>${I(p.id,'t',p.t,'type="number" min="0"')}</td><td class="n"><b>${med(p).toFixed(2)}</b></td><td class="n">${I(p.id,'vinti',p.vinti||0,'type="number" min="0" title="Tornei vinti"')}</td><td class="n">${I(p.id,'ultimo',p.ultimo||0,'type="number" min="0" title="Ultimi posti"')}</td><td class="adm"><button class="x" aria-label="Elimina" onclick="del('${p.id}')">✕</button></td></tr>`).join('')}</table></div>
+  return `<div class="section-hero"><div><div class="eyebrow">PADEL LEON / STAGIONE</div><h2>Classifica Generale</h2><p>Punti, presenze e medie di tutti i giocatori</p></div><div class="sport-metrics"><div class="hero-metric">${P.length}<small>ATLETI</small></div><div class="hero-metric">${P.reduce((a,p)=>a+(Number(p.vinti)||0),0)}<small>TORNEI VINTI</small></div></div></div><div class="card generale-card"><table><tr><th>#</th>${th('generale','Nome','n')}${th('generale','Cognome','c')}${th('generale','Sesso','s')}${th('generale','Punti','tot','n')}${th('generale','Tornei','t','n')}${th('generale','Media','med','n')}${th('generale','🏆 Vinti','vinti','n')}${th('generale','🥄 Ultimo','ultimo','n')}<th></th></tr>${P.map((p,i)=>`<tr class="person-row gender-${p.s==='F'?'F':'M'}"><td><span class="rank-no">${i+1}</span></td><td>${I(p.id,'n',p.n)}</td><td>${I(p.id,'c',p.c)}</td><td>${Sel(p.id,p.s||'M')}</td><td>${I(p.id,'tot',p.tot,'type="number" min="0"')}</td><td>${I(p.id,'t',p.t,'type="number" min="0"')}</td><td class="n"><b>${med(p).toFixed(2)}</b></td><td class="n">${I(p.id,'vinti',p.vinti||0,'type="number" min="0" title="Tornei vinti"')}</td><td class="n">${I(p.id,'ultimo',p.ultimo||0,'type="number" min="0" title="Ultimi posti"')}</td><td class="adm"><button class="x" aria-label="Elimina" onclick="del('${p.id}')">✕</button></td></tr>`).join('')}</table></div>
 <div class="card adm"><div class="row"><input id="nn" placeholder="Nome" style="flex:1"><input id="nc" placeholder="Cognome" style="flex:1"><select id="ns" style="width:auto"><option value="M">M</option><option value="F">F</option></select><button class="p" onclick="add()">Aggiungi</button></div><p class="mut">Media = punti totali ÷ tornei giocati. 🏆 Vinti e 🥄 Ultimo aumentano soltanto alla conferma ADMIN. I valori sono modificabili dall'ADMIN per eventuali correzioni.</p><button class="s" onclick="if(confirm('Eliminare tutti i giocatori e il torneo corrente? Lo Storico resterà salvato.')){S={players:[],sel:{},T:null,mode:4};save();R()}">Svuota tutto</button></div>`}
 
 function ed(id,f,v){const p=S.players.find(x=>x.id==id);p[f]=(f=='n'||f=='c'||f=='s')?v.trim():Math.max(0,+v||0);save();R()}
@@ -521,8 +774,8 @@ function storico(){
     const t=h.snapshot||{},rank=Array.isArray(t.ranking)?t.ranking:[],rounds=Array.isArray(t.rounds)?t.rounds:[],winner=rank[0],last=rank[rank.length-1];
     const date=t.startedAt||h.approved_at;
     const playedCount=rounds.reduce((a,r)=>a+(r.matches?.length||0),0);
-    const summary=`<div class="hist-summary"><div><b>🏆 Primo:</b> <span class="sexname ${winner?.s==='F'?'F':'M'}">${esc(winner?.fullName||winner?.name||'—')}</span></div><div><b>🥄 Ultimo:</b> <span class="sexname ${last?.s==='F'?'F':'M'}">${esc(last?.fullName||last?.name||'—')}</span></div><p class="hist-date">Data torneo: ${historyDate(date)} · Confermato: ${historyDate(h.approved_at)}</p><p class="mut">${esc(String(h.mode))} giocatori · ${rounds.length} turni · ${playedCount} partite</p></div>`;
-    const ranking=`<h3>Classifica finale</h3><table><thead><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr></thead><tbody>${rank.map((r,k)=>`<tr class="${k===0?'lead':''}"><td>${k+1}</td><td class="sexname ${r.s==='F'?'F':'M'}">${esc(r.fullName||r.name||'—')}</td><td class="n">${Number(r.pt)||0}</td><td class="n">${Number(r.g)||0}</td><td class="n">${Number(r.w)||0}</td><td class="n">${Number(r.d)||0}</td><td class="n">${Number(r.l)||0}</td><td class="n">${Number(r.diff)||0}</td></tr>`).join('')}</tbody></table>`;
+    const summary=`<div class="hist-summary"><div class="spotlight-grid">${spotlightCard('winner',winner?.fullName||winner?.name||'—',winner?.s,(Number(winner?.pt)||0)+' punti · Diff '+(Number(winner?.diff)||0),1,'Vincitore')}${spotlightCard('last',last?.fullName||last?.name||'—',last?.s,(Number(last?.pt)||0)+' punti · Diff '+(Number(last?.diff)||0),rank.length,'Ultimo classificato')}</div><p class="hist-date">Data torneo: ${historyDate(date)} · Confermato: ${historyDate(h.approved_at)}</p><p class="mut">${esc(String(h.mode))} giocatori · ${rounds.length} turni · ${playedCount} partite</p></div>`;
+    const ranking=`<h3>Classifica finale</h3><div class="rank-scroll"><table class="rank-table"><thead><tr><th>#</th><th>Giocatore</th><th class="n">Pt</th><th class="n">G</th><th class="n">V</th><th class="n">N</th><th class="n">P</th><th class="n">Diff</th></tr></thead><tbody>${rank.map((r,k)=>`<tr class="${k===0?'rank-leader':k===rank.length-1?'rank-last':''}"><td><span class="rank-no">${k+1}</span></td><td class="sexname ${r.s==='F'?'F':'M'}">${esc(r.fullName||r.name||'—')}</td><td class="n rank-points">${Number(r.pt)||0}</td><td class="n">${Number(r.g)||0}</td><td class="n">${Number(r.w)||0}</td><td class="n">${Number(r.d)||0}</td><td class="n">${Number(r.l)||0}</td><td class="n">${Number(r.diff)||0}</td></tr>`).join('')}</tbody></table></div>`;
     const turns=`<h3>Turni e risultati</h3>${rounds.map((r,j)=>`<div class="hist-round"><b>Turno ${j+1}</b>${Array.isArray(r.rest)&&r.rest.length?`<p class="mut">A riposo: ${r.rest.map(id=>esc(rank.find(p=>String(p.id)===String(id))?.fullName||t.names?.[id]||'—')).join(', ')}</p>`:''}${(r.matches||[]).map((m,k)=>`<div class="mut">Campo ${k+1}</div><div class="hist-match">${historicalTeam(t,m.t1||[])}<span class="vs">${esc(String(m.s1))} – ${esc(String(m.s2))}</span>${historicalTeam(t,m.t2||[])}</div>`).join('')}</div>`).join('')}`;
     return `<details class="card hist-item" ${i===0?'open':''}><summary><span class="hist-archive-title">${historyDate(date)} · ${Number(h.mode)||'?'} giocatori</span></summary>${summary}${ranking}${turns}</details>`;
   }).join('');
